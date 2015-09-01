@@ -29,7 +29,7 @@
 #include "Explosion.h"
 #include "BattlescapeState.h"
 #include "Particle.h"
-#include "../Resource/ResourcePack.h"
+#include "../Mod/ResourcePack.h"
 #include "../Engine/Action.h"
 #include "../Engine/SurfaceSet.h"
 #include "../Engine/Timer.h"
@@ -41,12 +41,12 @@
 #include "../Savegame/Tile.h"
 #include "../Savegame/BattleUnit.h"
 #include "../Savegame/BattleItem.h"
-#include "../Ruleset/Ruleset.h"
-#include "../Ruleset/RuleItem.h"
-#include "../Ruleset/RuleInterface.h"
-#include "../Ruleset/MapDataSet.h"
-#include "../Ruleset/MapData.h"
-#include "../Ruleset/Armor.h"
+#include "../Mod/Ruleset.h"
+#include "../Mod/RuleItem.h"
+#include "../Mod/RuleInterface.h"
+#include "../Mod/MapDataSet.h"
+#include "../Mod/MapData.h"
+#include "../Mod/Armor.h"
 #include "BattlescapeMessage.h"
 #include "../Savegame/SavedGame.h"
 #include "../Interface/NumberText.h"
@@ -1040,8 +1040,26 @@ void Map::drawTerrain(Surface *surface)
 									_txtAccuracy->setColor(Palette::blockOffset(4)-1);
 								}
 
+								bool outOfRange = distance > weapon->getMaxRange();
+								// special handling for short ranges and diagonals
+								if (outOfRange && action->actor->directionTo(action->target) % 2 == 1)
+								{
+									// special handling for maxRange 1: allow it to target diagonally adjacent tiles, even though they are technically 2 tiles away.
+									if (weapon->getMaxRange() == 1
+										&& distance == 2)
+									{
+										outOfRange = false;
+									}
+									// special handling for maxRange 2: allow it to target diagonally adjacent tiles on a level above/below, even though they are technically 3 tiles away.
+									else if (weapon->getMaxRange() == 2
+										&& distance == 3
+										&& itZ != action->actor->getPosition().z)
+									{
+										outOfRange = false;
+									}
+								}
 								// zero accuracy or out of range: set it red.
-								if (accuracy <= 0 || distance > weapon->getMaxRange())
+								if (accuracy <= 0 || outOfRange)
 								{
 									accuracy = 0;
 									_txtAccuracy->setColor(Palette::blockOffset(2)-1);
@@ -1709,7 +1727,7 @@ void Map::setWidth(int width)
  * Get the hidden movement screen's vertical position.
  * @return the vertical position of the hidden movement window.
  */
-const int Map::getMessageY()
+int Map::getMessageY()
 {
 	return _message->getY();
 }
@@ -1717,7 +1735,7 @@ const int Map::getMessageY()
 /**
  * Get the icon height.
  */
-const int Map::getIconHeight()
+int Map::getIconHeight()
 {
 	return _iconHeight;
 }
@@ -1725,7 +1743,7 @@ const int Map::getIconHeight()
 /**
  * Get the icon width.
  */
-const int Map::getIconWidth()
+int Map::getIconWidth()
 {
 	return _iconWidth;
 }
@@ -1736,7 +1754,7 @@ const int Map::getIconWidth()
  * @param pos the map position to calculate the sound angle from.
  * @return the angle of the sound (280 to 440).
  */
-const int Map::getSoundAngle(Position pos)
+int Map::getSoundAngle(Position pos)
 {
 	int midPoint = getWidth() / 2;
 	Position relativePosition;

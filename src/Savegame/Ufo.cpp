@@ -26,10 +26,10 @@
 #include "AlienMission.h"
 #include "../Engine/Exception.h"
 #include "../Engine/Language.h"
-#include "../Ruleset/Ruleset.h"
-#include "../Ruleset/RuleUfo.h"
-#include "../Ruleset/UfoTrajectory.h"
-#include "../Ruleset/RuleAlienMission.h"
+#include "../Mod/Ruleset.h"
+#include "../Mod/RuleUfo.h"
+#include "../Mod/UfoTrajectory.h"
+#include "../Mod/RuleAlienMission.h"
 #include "SavedGame.h"
 #include "Waypoint.h"
 
@@ -273,13 +273,10 @@ std::wstring Ufo::getName(Language *lang) const
 	case FLYING:
 	case DESTROYED: // Destroyed also means leaving Earth.
 		return lang->getString("STR_UFO_").arg(_id);
-		break;
 	case LANDED:
 		return lang->getString("STR_LANDING_SITE_").arg(_landId);
-		break;
 	case CRASHED:
 		return lang->getString("STR_CRASH_SITE_").arg(_crashId);
-		break;
 	default:
 		return L"";
 	}

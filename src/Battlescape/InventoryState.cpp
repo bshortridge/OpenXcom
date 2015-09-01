@@ -20,7 +20,7 @@
 #include "Inventory.h"
 #include "../Engine/Game.h"
 #include "../Engine/FileMap.h"
-#include "../Resource/ResourcePack.h"
+#include "../Mod/ResourcePack.h"
 #include "../Engine/LocalizedText.h"
 #include "../Engine/Screen.h"
 #include "../Engine/Palette.h"
@@ -36,13 +36,15 @@
 #include "../Savegame/SavedBattleGame.h"
 #include "../Savegame/BattleUnit.h"
 #include "../Savegame/Soldier.h"
-#include "../Ruleset/RuleItem.h"
-#include "../Ruleset/RuleInventory.h"
-#include "../Ruleset/Armor.h"
+#include "../Mod/RuleItem.h"
+#include "../Mod/RuleInventory.h"
+#include "../Mod/Armor.h"
 #include "../Engine/Options.h"
 #include "UnitInfoState.h"
 #include "BattlescapeState.h"
 #include "TileEngine.h"
+#include "../Mod/Ruleset.h"
+#include "../Mod/RuleInterface.h"
 
 namespace OpenXcom
 {
@@ -550,7 +552,7 @@ void InventoryState::btnRankClick(Action *)
 	_game->pushState(new UnitInfoState(_battleGame->getSelectedUnit(), _parent, true, false));
 }
 
-void InventoryState::btnCreateTemplateClick(Action *action)
+void InventoryState::btnCreateTemplateClick(Action *)
 {
 	// don't accept clicks when moving items
 	if (_inv->getSelectedItem() != 0)
@@ -604,7 +606,7 @@ static void _clearInventory(Game *game, std::vector<BattleItem*> *unitInv, Tile 
 	}
 }
 
-void InventoryState::btnApplyTemplateClick(Action *action)
+void InventoryState::btnApplyTemplateClick(Action *)
 {
 	// don't accept clicks when moving items
 	// it's ok if the template is empty -- it will just result in clearing the
@@ -735,7 +737,7 @@ void InventoryState::_refreshMouse()
 	SDL_WarpMouse(x, y);
 }
 
-void InventoryState::onClearInventory(Action *action)
+void InventoryState::onClearInventory(Action *)
 {
 	// don't accept clicks when moving items
 	if (_inv->getSelectedItem() != 0)

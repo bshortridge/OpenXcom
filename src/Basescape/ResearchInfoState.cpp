@@ -19,19 +19,20 @@
 #include "ResearchInfoState.h"
 #include "../Engine/Action.h"
 #include "../Engine/Game.h"
-#include "../Resource/ResourcePack.h"
+#include "../Mod/ResourcePack.h"
 #include "../Engine/LocalizedText.h"
 #include "../Engine/Options.h"
 #include "../Interface/TextButton.h"
 #include "../Interface/Window.h"
 #include "../Interface/Text.h"
 #include "../Savegame/Base.h"
-#include "../Ruleset/RuleResearch.h"
+#include "../Mod/RuleResearch.h"
 #include "../Savegame/ItemContainer.h"
 #include "../Savegame/ResearchProject.h"
 #include "../Interface/ArrowButton.h"
 #include "../Engine/Timer.h"
 #include "../Engine/RNG.h"
+#include "../Mod/Ruleset.h"
 #include <limits>
 
 namespace OpenXcom
@@ -154,6 +155,15 @@ void ResearchInfoState::buildUi()
 		_btnOk->onKeyboardPress((ActionHandler)&ResearchInfoState::btnOkClick, Options::keyCancel);
 	}
 	_btnCancel->onMouseClick((ActionHandler)&ResearchInfoState::btnCancelClick);
+}
+
+/**
+* Frees up memory that's not automatically cleaned on exit
+*/
+ResearchInfoState::~ResearchInfoState()
+{
+	delete _timerLess;
+	delete _timerMore;
 }
 
 /**

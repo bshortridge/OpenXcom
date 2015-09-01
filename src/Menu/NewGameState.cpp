@@ -18,7 +18,7 @@
  */
 #include "NewGameState.h"
 #include "../Engine/Game.h"
-#include "../Resource/ResourcePack.h"
+#include "../Mod/ResourcePack.h"
 #include "../Engine/LocalizedText.h"
 #include "../Interface/TextButton.h"
 #include "../Interface/ToggleTextButton.h"
@@ -27,6 +27,8 @@
 #include "../Geoscape/GeoscapeState.h"
 #include "../Geoscape/BuildNewBaseState.h"
 #include "../Engine/Options.h"
+#include "../Savegame/SavedGame.h"
+#include "../Mod/Ruleset.h"
 
 namespace OpenXcom
 {

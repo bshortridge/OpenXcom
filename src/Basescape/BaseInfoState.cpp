@@ -20,7 +20,7 @@
 #include <sstream>
 #include "../Engine/Game.h"
 #include "../Engine/Action.h"
-#include "../Resource/ResourcePack.h"
+#include "../Mod/ResourcePack.h"
 #include "../Engine/LocalizedText.h"
 #include "../Engine/Options.h"
 #include "../Interface/Bar.h"
@@ -363,7 +363,7 @@ void BaseInfoState::init()
  * Changes the base name.
  * @param action Pointer to an action.
  */
-void BaseInfoState::edtBaseChange(Action *action)
+void BaseInfoState::edtBaseChange(Action *)
 {
 	_base->setName(_edtBase->getText());
 }

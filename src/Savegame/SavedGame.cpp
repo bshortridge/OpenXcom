@@ -24,7 +24,7 @@
 #include <yaml-cpp/yaml.h>
 #include "../version.h"
 #include "../Engine/Logger.h"
-#include "../Ruleset/Ruleset.h"
+#include "../Mod/Ruleset.h"
 #include "../Engine/RNG.h"
 #include "../Engine/Language.h"
 #include "../Engine/Exception.h"
@@ -39,18 +39,18 @@
 #include "Region.h"
 #include "Ufo.h"
 #include "Waypoint.h"
-#include "../Ruleset/RuleResearch.h"
+#include "../Mod/RuleResearch.h"
 #include "ResearchProject.h"
 #include "ItemContainer.h"
 #include "Soldier.h"
 #include "Transfer.h"
-#include "../Ruleset/RuleManufacture.h"
+#include "../Mod/RuleManufacture.h"
 #include "Production.h"
 #include "MissionSite.h"
 #include "AlienBase.h"
 #include "AlienStrategy.h"
 #include "AlienMission.h"
-#include "../Ruleset/RuleRegion.h"
+#include "../Mod/RuleRegion.h"
 
 namespace OpenXcom
 {
@@ -441,19 +441,19 @@ void SavedGame::load(const std::string &filename, Ruleset *rule)
 	const YAML::Node &research = doc["poppedResearch"];
 	for (YAML::const_iterator it = research.begin(); it != research.end(); ++it)
 	{
-		std::string research = it->as<std::string>();
-		if (rule->getResearch(research))
+		std::string id = it->as<std::string>();
+		if (rule->getResearch(id))
 		{
-			_poppedResearch.push_back(rule->getResearch(research));
+			_poppedResearch.push_back(rule->getResearch(id));
 		}
 	}
 	_alienStrategy->load(rule, doc["alienStrategy"]);
 
 	for (YAML::const_iterator i = doc["deadSoldiers"].begin(); i != doc["deadSoldiers"].end(); ++i)
 	{
-		Soldier *s = new Soldier(rule->getSoldier("XCOM"), rule->getArmor("STR_NONE_UC"));
-		s->load(*i, rule, this);
-		_deadSoldiers.push_back(s);
+		Soldier *soldier = new Soldier(rule->getSoldier("XCOM"), rule->getArmor("STR_NONE_UC"));
+		soldier->load(*i, rule, this);
+		_deadSoldiers.push_back(soldier);
 	}
 
 	if (const YAML::Node &battle = doc["battleGame"])
