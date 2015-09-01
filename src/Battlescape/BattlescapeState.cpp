@@ -300,7 +300,8 @@ BattlescapeState::BattlescapeState() : _reserve(0), _xBeforeMouseScrolling(0), _
 	_btnKneel->setTooltip("STR_KNEEL");
 	_btnKneel->onMouseIn((ActionHandler)&BattlescapeState::txtTooltipIn);
 	_btnKneel->onMouseOut((ActionHandler)&BattlescapeState::txtTooltipOut);
-
+	_btnKneel->allowToggleInversion();
+        
 	_btnInventory->onMouseClick((ActionHandler)&BattlescapeState::btnInventoryClick);
 	_btnInventory->onKeyboardPress((ActionHandler)&BattlescapeState::btnInventoryClick, Options::keyBattleInventory);
 	_btnInventory->setTooltip("STR_INVENTORY");
@@ -851,22 +852,23 @@ void BattlescapeState::btnShowMapClick(Action *)
  */
 void BattlescapeState::btnKneelClick(Action *)
 {
-	if (allowButtons())
-	{
-		BattleUnit *bu = _save->getSelectedUnit();
-		if (bu)
-		{
-			_battleGame->kneel(bu);
-		}
+  if (allowButtons())
+  {
+    BattleUnit *bu = _save->getSelectedUnit();
+    if (bu)
+    {
+      _battleGame->kneel(bu);
+      _btnKneel->toggle(bu->isKneeled());
+    }
 
-		// update any path preview if unit kneels
-		if (_battleGame->getPathfinding()->isPathPreviewed() && bu->isKneeled())
-		{
-			_battleGame->getPathfinding()->calculate(_battleGame->getCurrentAction()->actor, _battleGame->getCurrentAction()->target);
-			_battleGame->getPathfinding()->removePreview();
-			_battleGame->getPathfinding()->previewPath();
-		}
-	}
+    // update any path preview if unit kneels
+    if (_battleGame->getPathfinding()->isPathPreviewed() && bu->isKneeled())
+    {
+      _battleGame->getPathfinding()->calculate(_battleGame->getCurrentAction()->actor, _battleGame->getCurrentAction()->target);
+      _battleGame->getPathfinding()->removePreview();
+      _battleGame->getPathfinding()->previewPath();
+    }
+  }
 }
 
 /**
@@ -1297,6 +1299,8 @@ void BattlescapeState::updateSoldierInfo()
 	_barMorale->setMax(100);
 	_barMorale->setValue(battleUnit->getMorale());
 
+        _btnKneel->toggle(battleUnit->isKneeled());
+        
 	BattleItem *leftHandItem = battleUnit->getItem("STR_LEFT_HAND");
 	_btnLeftHandItem->clear();
 	_numAmmoLeft->setVisible(false);
