@@ -149,6 +149,12 @@ public:
 	void refuel();
 	/// Rearms the craft.
 	std::string rearm(Ruleset *rules);
+        /// Calculates the time to repair
+        unsigned int calcRepairTime();
+        /// Calculates the time to refuel
+        unsigned int calcRefuelTime();
+        /// Calculates the time to rearm and sets the rearm flag
+        unsigned int calcRearmTime(bool setRearmFlag = false);
 	/// Sets the craft's battlescape status.
 	void setInBattlescape(bool inbattle);
 	/// Gets if the craft is in battlescape.

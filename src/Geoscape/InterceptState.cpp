@@ -46,108 +46,134 @@ namespace OpenXcom
  */
 InterceptState::InterceptState(Globe *globe, Base *base, Target *target) : _globe(globe), _base(base), _target(target)
 {
-	_screen = false;
+  const int WIDTH_CRAFT = 84;
+  const int WIDTH_STATUS = 100;
+  const int WIDTH_BASE = 56;
+  const int WIDTH_WEAPONS = 76;  
+  _screen = false;
 
-	// Create objects
-	_window = new Window(this, 320, 140, 0, 30, POPUP_HORIZONTAL);
-	_btnCancel = new TextButton(_base ? 142 : 288, 16, 16, 146);
-	_btnGotoBase = new TextButton(142, 16, 162, 146);
-	_txtTitle = new Text(300, 17, 10, 46);
-	_txtCraft = new Text(86, 9, 14, 70);
-	_txtStatus = new Text(70, 9, 100, 70);
-	_txtBase = new Text(80, 9, 170, 70);
-	_txtWeapons = new Text(80, 17, 238, 62);
-	_lstCrafts = new TextList(288, 64, 8, 78);
+  // Create objects
+  _window = new Window(this, 320, 140, 0, 30, POPUP_HORIZONTAL);
+  _btnCancel = new TextButton(_base ? 142 : 288, 16, 16, 146);
+  _btnGotoBase = new TextButton(142, 16, 162, 146);
+  _txtTitle = new Text(300, 17, 10, 46);
+  int x = 4;
+  _txtCraft = new Text(WIDTH_CRAFT, 9, x, 70);
+  x += WIDTH_CRAFT;
+  _txtStatus = new Text(WIDTH_STATUS, 9, x, 70);
+  x += WIDTH_STATUS;
+  _txtBase = new Text(WIDTH_BASE, 9, x, 70);
+  x += WIDTH_BASE;
+  _txtWeapons = new Text(WIDTH_WEAPONS, 17, x, 62);
+  _lstCrafts = new TextList(316, 64, 2, 78);
 
-	// Set palette
-	setInterface("geoCraftScreens");
+  // Set palette
+  setInterface("geoCraftScreens");
 
-	add(_window, "window", "geoCraftScreens");
-	add(_btnCancel, "button", "geoCraftScreens");
-	add(_btnGotoBase, "button", "geoCraftScreens");
-	add(_txtTitle, "text1", "geoCraftScreens");
-	add(_txtCraft, "text2", "geoCraftScreens");
-	add(_txtStatus, "text2", "geoCraftScreens");
-	add(_txtBase, "text2", "geoCraftScreens");
-	add(_txtWeapons, "text2", "geoCraftScreens");
-	add(_lstCrafts, "list", "geoCraftScreens");
+  add(_window, "window", "geoCraftScreens");
+  add(_btnCancel, "button", "geoCraftScreens");
+  add(_btnGotoBase, "button", "geoCraftScreens");
+  add(_txtTitle, "text1", "geoCraftScreens");
+  add(_txtCraft, "text2", "geoCraftScreens");
+  add(_txtStatus, "text2", "geoCraftScreens");
+  add(_txtBase, "text2", "geoCraftScreens");
+  add(_txtWeapons, "text2", "geoCraftScreens");
+  add(_lstCrafts, "list", "geoCraftScreens");
 
-	centerAllSurfaces();
+  centerAllSurfaces();
 
-	// Set up objects
-	_window->setBackground(_game->getResourcePack()->getSurface("BACK12.SCR"));
+  // Set up objects
+  _window->setBackground(_game->getResourcePack()->getSurface("BACK12.SCR"));
 
-	_btnCancel->setText(tr("STR_CANCEL"));
-	_btnCancel->onMouseClick((ActionHandler)&InterceptState::btnCancelClick);
-	_btnCancel->onKeyboardPress((ActionHandler)&InterceptState::btnCancelClick, Options::keyCancel);
-	_btnCancel->onKeyboardPress((ActionHandler)&InterceptState::btnCancelClick, Options::keyGeoIntercept);
+  _btnCancel->setText(tr("STR_CANCEL"));
+  _btnCancel->onMouseClick((ActionHandler)&InterceptState::btnCancelClick);
+  _btnCancel->onKeyboardPress((ActionHandler)&InterceptState::btnCancelClick, Options::keyCancel);
+  _btnCancel->onKeyboardPress((ActionHandler)&InterceptState::btnCancelClick, Options::keyGeoIntercept);
 
-	_btnGotoBase->setText(tr("STR_GO_TO_BASE"));
-	_btnGotoBase->onMouseClick((ActionHandler)&InterceptState::btnGotoBaseClick);
-	_btnGotoBase->setVisible(_base != 0);
+  _btnGotoBase->setText(tr("STR_GO_TO_BASE"));
+  _btnGotoBase->onMouseClick((ActionHandler)&InterceptState::btnGotoBaseClick);
+  _btnGotoBase->setVisible(_base != 0);
 
-	_txtTitle->setAlign(ALIGN_CENTER);
-	_txtTitle->setBig();
-	_txtTitle->setText(tr("STR_LAUNCH_INTERCEPTION"));
+  _txtTitle->setAlign(ALIGN_CENTER);
+  _txtTitle->setBig();
+  _txtTitle->setText(tr("STR_LAUNCH_INTERCEPTION"));
 
-	_txtCraft->setText(tr("STR_CRAFT"));
+  _txtCraft->setText(tr("STR_CRAFT"));
 
-	_txtStatus->setText(tr("STR_STATUS"));
+  _txtStatus->setText(tr("STR_STATUS"));
 
-	_txtBase->setText(tr("STR_BASE"));
+  _txtBase->setText(tr("STR_BASE"));
 
-	_txtWeapons->setText(tr("STR_WEAPONS_CREW_HWPS"));
+  _txtWeapons->setText(tr("STR_WEAPONS_CREW_HWPS"));
 
-	_lstCrafts->setColumns(4, 86, 70, 80, 46);
-	_lstCrafts->setSelectable(true);
-	_lstCrafts->setBackground(_window);
-	_lstCrafts->setMargin(6);
-	_lstCrafts->onMouseClick((ActionHandler)&InterceptState::lstCraftsLeftClick);
-	_lstCrafts->onMouseClick((ActionHandler)&InterceptState::lstCraftsRightClick, SDL_BUTTON_RIGHT);
+  _lstCrafts->setColumns(4, WIDTH_CRAFT, WIDTH_STATUS, WIDTH_BASE, WIDTH_WEAPONS);
+  _lstCrafts->setSelectable(true);
+  _lstCrafts->setBackground(_window);
+  _lstCrafts->setMargin(2);
+  _lstCrafts->onMouseClick((ActionHandler)&InterceptState::lstCraftsLeftClick);
+  _lstCrafts->onMouseClick((ActionHandler)&InterceptState::lstCraftsRightClick, SDL_BUTTON_RIGHT);
 
-	int row = 0;
-	for (std::vector<Base*>::iterator i = _game->getSavedGame()->getBases()->begin(); i != _game->getSavedGame()->getBases()->end(); ++i)
-	{
-		if (_base != 0 && (*i) != _base)
-			continue;
-		for (std::vector<Craft*>::iterator j = (*i)->getCrafts()->begin(); j != (*i)->getCrafts()->end(); ++j)
-		{
-			std::wostringstream ss;
-			if ((*j)->getNumWeapons() > 0)
-			{
-				ss << L'\x01' << (*j)->getNumWeapons() << L'\x01';
-			}
-			else
-			{
-				ss << 0;
-			}
-			ss << "/";
-			if ((*j)->getNumSoldiers() > 0)
-			{
-				ss << L'\x01' << (*j)->getNumSoldiers() << L'\x01';
-			}
-			else
-			{
-				ss << 0;
-			}
-			ss << "/";
-			if ((*j)->getNumVehicles() > 0)
-			{
-				ss << L'\x01' << (*j)->getNumVehicles() << L'\x01';
-			}
-			else
-			{
-				ss << 0;
-			}
-			_crafts.push_back(*j);
-			_lstCrafts->addRow(4, (*j)->getName(_game->getLanguage()).c_str(), tr((*j)->getStatus()).c_str(), (*i)->getName().c_str(), ss.str().c_str());
-			if ((*j)->getStatus() == "STR_READY")
-			{
-				_lstCrafts->setCellColor(row, 1, _lstCrafts->getSecondaryColor());
-			}
-			row++;
-		}
-	}
+  int row = 0;
+  for (std::vector<Base*>::iterator i = _game->getSavedGame()->getBases()->begin(); i != _game->getSavedGame()->getBases()->end(); ++i)
+  {
+    if (_base != 0 && (*i) != _base)
+      continue;
+    for (std::vector<Craft*>::iterator j = (*i)->getCrafts()->begin(); j != (*i)->getCrafts()->end(); ++j)
+    {
+      std::wostringstream ssStatus;
+      std::string status = (*j)->getStatus();
+
+      ssStatus << tr(status);
+      if (status != "STR_READY" && status != "STR_OUT")
+      {
+        unsigned int maintenanceHours = 0;
+
+        maintenanceHours += (*j)->calcRepairTime();
+        maintenanceHours += (*j)->calcRefuelTime();
+        maintenanceHours += (*j)->calcRearmTime();
+
+        ssStatus << L": " << tr("STR_HOUR", maintenanceHours);
+      }
+      
+      std::wostringstream ss;
+      if ((*j)->getNumWeapons() > 0)
+      {
+        ss << L'\x01' << (*j)->getNumWeapons() << L'\x01';
+      }
+      else
+      {
+        ss << 0;
+      }
+      ss << "/";
+      if ((*j)->getNumSoldiers() > 0)
+      {
+        ss << L'\x01' << (*j)->getNumSoldiers() << L'\x01';
+      }
+      else
+      {
+        ss << 0;
+      }
+      ss << "/";
+      if ((*j)->getNumVehicles() > 0)
+      {
+        ss << L'\x01' << (*j)->getNumVehicles() << L'\x01';
+      }
+      else
+      {
+        ss << 0;
+      }
+      _crafts.push_back(*j);
+      _lstCrafts->addRow(4, (*j)->getName(_game->getLanguage()).c_str(),
+                            ssStatus.str().c_str(),
+                            (*i)->getName().c_str(),
+                            ss.str().c_str());
+      if (status == "STR_READY")
+      {
+        _lstCrafts->setCellColor(row, 1, _lstCrafts->getSecondaryColor());
+      }
+      row++;
+    }
+  }
 }
 
 /**
