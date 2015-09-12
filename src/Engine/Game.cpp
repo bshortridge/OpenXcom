@@ -28,8 +28,8 @@
 #include "Logger.h"
 #include "../Interface/Cursor.h"
 #include "../Interface/FpsCounter.h"
-#include "../Mod/ResourcePack.h"
-#include "../Mod/Ruleset.h"
+#include "../Mod/Mod.h"
+#include "../Mod/Mod.h"
 #include "../Savegame/SavedGame.h"
 #include "../Savegame/SavedBattleGame.h"
 #include "Action.h"
@@ -49,7 +49,7 @@ const double Game::VOLUME_GRADIENT = 10.0;
  * creates the display screen and sets up the cursor.
  * @param title Title of the game window.
  */
-Game::Game(const std::string &title) : _screen(0), _cursor(0), _lang(0), _res(0), _save(0), _rules(0), _quit(false), _init(false), _mouseActive(true), _timeUntilNextFrame(0)
+Game::Game(const std::string &title) : _screen(0), _cursor(0), _lang(0), _save(0), _mod(0), _quit(false), _init(false), _mouseActive(true), _timeUntilNextFrame(0)
 {
 	Options::reload = false;
 	Options::mute = false;
@@ -121,9 +121,8 @@ Game::~Game()
 
 	delete _cursor;
 	delete _lang;
-	delete _res;
 	delete _save;
-	delete _rules;
+	delete _mod;
 	delete _screen;
 	delete _fpsCounter;
 
@@ -473,7 +472,7 @@ void Game::loadLanguage(const std::string &filename)
 	}
 
 	ExtraStrings *strings = 0;
-	std::map<std::string, ExtraStrings *> extraStrings = _rules->getExtraStrings();
+	std::map<std::string, ExtraStrings *> extraStrings = _mod->getExtraStrings();
 	if (!extraStrings.empty())
 	{
 		if (extraStrings.find(filename) != extraStrings.end())
@@ -482,25 +481,6 @@ void Game::loadLanguage(const std::string &filename)
 		}
 	}
 	_lang->load(strings);
-}
-
-/**
- * Returns the resource pack currently in use by the game.
- * @return Pointer to the resource pack.
- */
-ResourcePack *Game::getResourcePack() const
-{
-	return _res;
-}
-
-/**
- * Sets a new resource pack for the game to use.
- * @param res Pointer to the resource pack.
- */
-void Game::setResourcePack(ResourcePack *res)
-{
-	delete _res;
-	_res = res;
 }
 
 /**
@@ -523,28 +503,28 @@ void Game::setSavedGame(SavedGame *save)
 }
 
 /**
- * Returns the ruleset currently in use by the game.
- * @return Pointer to the ruleset.
+ * Returns the mod currently in use by the game.
+ * @return Pointer to the mod.
  */
-Ruleset *Game::getRuleset() const
+Mod *Game::getMod() const
 {
-	return _rules;
+	return _mod;
 }
 
 /**
- * Loads the rulesets specified in the game options.
+ * Loads the mods specified in the game options.
  */
-void Game::loadRulesets()
+void Game::loadMods()
 {
-	Ruleset::resetGlobalStatics();
-	delete _rules;
-	_rules = new Ruleset();
+	Mod::resetGlobalStatics();
+	delete _mod;
+	_mod = new Mod();
 	const std::vector<std::pair<std::string, std::vector<std::string> > > &rulesets(FileMap::getRulesets());
 	for (size_t i = 0; rulesets.size() > i; ++i)
 	{
 		try
 		{
-			_rules->loadModRulesets(rulesets[i].second, i);
+			_mod->loadRulesets(rulesets[i].second, i);
 		}
 		catch (YAML::Exception &e)
 		{
@@ -571,7 +551,8 @@ void Game::loadRulesets()
 				"); disabling mod for next startup");
 		}
 	}
-	_rules->sortLists();
+	_mod->sortLists();
+	_mod->loadResources();
 }
 
 /**

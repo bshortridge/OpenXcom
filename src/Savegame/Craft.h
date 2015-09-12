@@ -32,7 +32,7 @@ class Base;
 class Soldier;
 class CraftWeapon;
 class ItemContainer;
-class Ruleset;
+class Mod;
 class SavedGame;
 class Vehicle;
 
@@ -60,7 +60,7 @@ public:
 	/// Cleans up the craft.
 	~Craft();
 	/// Loads the craft from YAML.
-	void load(const YAML::Node& node, const Ruleset *rule, SavedGame *save);
+	void load(const YAML::Node& node, const Mod *mod, SavedGame *save);
 	/// Saves the craft to YAML.
 	YAML::Node save() const;
 	/// Saves the craft's ID to YAML.
@@ -148,13 +148,13 @@ public:
 	/// Refuels the craft.
 	void refuel();
 	/// Rearms the craft.
-	std::string rearm(Ruleset *rules);
-        /// Calculates the time to repair
-        unsigned int calcRepairTime();
-        /// Calculates the time to refuel
-        unsigned int calcRefuelTime();
-        /// Calculates the time to rearm and sets the rearm flag
-        unsigned int calcRearmTime(bool setRearmFlag = false);
+	std::string rearm(Mod *mod);
+    /// Calculates the time to repair
+    unsigned int calcRepairTime();
+    /// Calculates the time to refuel
+    unsigned int calcRefuelTime();
+    /// Calculates the time to rearm and sets the rearm flag
+    unsigned int calcRearmTime(bool setRearmFlag = false);
 	/// Sets the craft's battlescape status.
 	void setInBattlescape(bool inbattle);
 	/// Gets if the craft is in battlescape.
