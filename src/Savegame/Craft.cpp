@@ -841,7 +841,7 @@ unsigned int Craft::calcRefuelTime()
   if (_fuel < _rules->getMaxFuel())
   { // We need fuel.
     std::string item = _rules->getRefuelItem();
-    int available = _base->getItems()->getItem(item);
+    int available = _base->getStorageItems()->getItem(item);
     int needed = _rules->getMaxFuel() - _fuel;
     if (item.empty())
     { // We have unlimited fuel.
@@ -871,7 +871,7 @@ unsigned int Craft::calcRearmTime(bool setRearmFlag /*= false*/)
     if (w != 0 && w->getAmmo() < w->getRules()->getAmmoMax())
     { // We need ammo
       std::string clip = w->getRules()->getClipItem();
-      int available = _base->getItems()->getItem(clip);
+      int available = _base->getStorageItems()->getItem(clip);
       int needed = w->getRules()->getAmmoMax() - w->getAmmo();
       if (clip.empty())
       { // We have unlimited ammo
