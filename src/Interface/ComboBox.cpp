@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2015 OpenXcom Developers.
+ * Copyright 2010-2016 OpenXcom Developers.
  *
  * This file is part of OpenXcom.
  *
@@ -17,6 +17,7 @@
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "ComboBox.h"
+#include <algorithm>
 #include "TextButton.h"
 #include "Window.h"
 #include "TextList.h"
@@ -79,9 +80,9 @@ ComboBox::~ComboBox()
 }
 
 /**
-* Changes the position of the surface in the X axis.
-* @param x X position in pixels.
-*/
+ * Changes the position of the surface in the X axis.
+ * @param x X position in pixels.
+ */
 void ComboBox::setX(int x)
 {
 	Surface::setX(x);
@@ -92,9 +93,9 @@ void ComboBox::setX(int x)
 }
 
 /**
-* Changes the position of the surface in the Y axis.
-* @param y Y position in pixels.
-*/
+ * Changes the position of the surface in the Y axis.
+ * @param y Y position in pixels.
+ */
 void ComboBox::setY(int y)
 {
 	Surface::setY(y);

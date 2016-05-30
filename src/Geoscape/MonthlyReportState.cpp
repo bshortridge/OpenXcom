@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2015 OpenXcom Developers.
+ * Copyright 2010-2016 OpenXcom Developers.
  *
  * This file is part of OpenXcom.
  *
@@ -16,12 +16,10 @@
  * You should have received a copy of the GNU General Public License
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
-#define _USE_MATH_DEFINES
 #include "MonthlyReportState.h"
 #include <sstream>
-#include <cmath>
 #include "../Engine/Game.h"
-#include "../Mod/ResourcePack.h"
+#include "../Mod/Mod.h"
 #include "../Engine/LocalizedText.h"
 #include "../Interface/TextButton.h"
 #include "../Interface/Window.h"
@@ -35,13 +33,15 @@
 #include "Globe.h"
 #include "../Engine/Options.h"
 #include "../Menu/CutsceneState.h"
+#include "../Savegame/Base.h"
+#include "../Battlescape/CommendationState.h"
+#include "../Savegame/SoldierDiary.h"
 #include "../Menu/SaveGameState.h"
-#include "../Mod/Ruleset.h"
 #include "../Mod/RuleInterface.h"
+#include "../fmath.h"
 
 namespace OpenXcom
 {
-
 /**
  * Initializes all the elements in the Monthly Report screen.
  * @param game Pointer to the core game.
@@ -82,7 +82,7 @@ MonthlyReportState::MonthlyReportState(bool psi, Globe *globe) : _psi(psi), _gam
 	centerAllSurfaces();
 
 	// Set up objects
-	_window->setBackground(_game->getResourcePack()->getSurface("BACK13.SCR"));
+	_window->setBackground(_game->getMod()->getSurface("BACK13.SCR"));
 
 	_btnOk->setText(tr("STR_OK"));
 	_btnOk->onMouseClick((ActionHandler)&MonthlyReportState::btnOkClick);
@@ -193,6 +193,7 @@ MonthlyReportState::MonthlyReportState(bool psi, Globe *globe) : _psi(psi), _gam
 		_sadList.erase(_sadList.begin(), _sadList.end());
 		_gameOver = true;
 	}
+
 	ss5 << satisFactionString;
 
 	if (!_gameOver)
@@ -216,9 +217,10 @@ MonthlyReportState::MonthlyReportState(bool psi, Globe *globe) : _psi(psi), _gam
 			}
 		}
 	}
-
 	if (resetWarning && _game->getSavedGame()->getWarned())
+	{
 		_game->getSavedGame()->setWarned(false);
+	}
 
 	ss5 << countryList(_happyList, "STR_COUNTRY_IS_PARTICULARLY_PLEASED", "STR_COUNTRIES_ARE_PARTICULARLY_HAPPY");
 	ss5 << countryList(_sadList, "STR_COUNTRY_IS_UNHAPPY_WITH_YOUR_ABILITY", "STR_COUNTRIES_ARE_UNHAPPY_WITH_YOUR_ABILITY");
@@ -227,13 +229,23 @@ MonthlyReportState::MonthlyReportState(bool psi, Globe *globe) : _psi(psi), _gam
 	_txtDesc->setText(ss5.str());
 }
 
-
 /**
  *
  */
 MonthlyReportState::~MonthlyReportState()
 {
+}
 
+/**
+ * Make sure the game is over.
+ */
+void MonthlyReportState::init()
+{
+	State::init();
+	if (_gameOver)
+	{
+		_game->getSavedGame()->setEnding(END_LOSE);
+	}
 }
 
 /**
@@ -245,6 +257,26 @@ void MonthlyReportState::btnOkClick(Action *)
 	if (!_gameOver)
 	{
 		_game->popState();
+		// Award medals for service time
+		// Iterate through all your bases
+		for (std::vector<Base*>::iterator b = _game->getSavedGame()->getBases()->begin(); b != _game->getSavedGame()->getBases()->end(); ++b)
+		{
+			// Iterate through all your soldiers
+			for (std::vector<Soldier*>::iterator s = (*b)->getSoldiers()->begin(); s != (*b)->getSoldiers()->end(); ++s)
+			{
+				Soldier *soldier = _game->getSavedGame()->getSoldier((*s)->getId());
+				// Award medals to eligible soldiers
+				soldier->getDiary()->addMonthlyService();
+				if (soldier->getDiary()->manageCommendations(_game->getMod(), _game->getSavedGame()->getMissionStatistics()))
+				{
+					_soldiersMedalled.push_back(soldier);
+				}
+			}
+		}
+		if (!_soldiersMedalled.empty())
+		{
+			_game->pushState(new CommendationState(_soldiersMedalled));
+		}
 		if (_psi)
 		{
 			_game->pushState(new PsiTrainingState);
@@ -263,11 +295,15 @@ void MonthlyReportState::btnOkClick(Action *)
 	{
 		if (_txtFailure->getVisible())
 		{
-			_game->pushState(new CutsceneState("loseGame"));
+			_game->pushState(new CutsceneState(CutsceneState::LOSE_GAME));
+			if (_game->getSavedGame()->isIronman())
+			{
+				_game->pushState(new SaveGameState(OPT_GEOSCAPE, SAVE_IRONMAN, _palette));
+			}
 		}
 		else
 		{
-			_window->setColor(_game->getRuleset()->getInterface("monthlyReport")->getElement("window")->color2);
+			_window->setColor(_game->getMod()->getInterface("monthlyReport")->getElement("window")->color2);
 			_txtTitle->setVisible(false);
 			_txtMonth->setVisible(false);
 			_txtRating->setVisible(false);
@@ -278,7 +314,7 @@ void MonthlyReportState::btnOkClick(Action *)
 			_btnOk->setVisible(false);
 			_btnBigOk->setVisible(true);
 			_txtFailure->setVisible(true);
-			_game->getResourcePack()->playMusic("GMLOSE");
+			_game->getMod()->playMusic("GMLOSE");
 		}
 	}
 }
@@ -300,7 +336,6 @@ void MonthlyReportState::calculateChanges()
 	int lastMonthOffset = _game->getSavedGame()->getFundsList().size() - 3;
 	if (lastMonthOffset < 0)
 		lastMonthOffset += 2;
-
 	// update activity meters, calculate a total score based on regional activity
 	// and gather last month's score
 	for (std::vector<Region*>::iterator k = _game->getSavedGame()->getRegions()->begin(); k != _game->getSavedGame()->getRegions()->end(); ++k)
@@ -311,7 +346,6 @@ void MonthlyReportState::calculateChanges()
 		xcomSubTotal += (*k)->getActivityXcom().at(monthOffset);
 		alienTotal += (*k)->getActivityAlien().at(monthOffset);
 	}
-
 	// apply research bonus AFTER calculating our total, because this bonus applies to the council ONLY,
 	// and shouldn't influence each country's decision.
 
@@ -324,8 +358,6 @@ void MonthlyReportState::calculateChanges()
 
 	if (_game->getSavedGame()->getResearchScores().size() > 2)
 		_lastMonthsRating += _game->getSavedGame()->getResearchScores().at(lastMonthOffset);
-
-
 	// now that we have our totals we can send the relevant info to the countries
 	// and have them make their decisions weighted on the council's perspective.
 	for (std::vector<Country*>::iterator k = _game->getSavedGame()->getCountries()->begin(); k != _game->getSavedGame()->getCountries()->end(); ++k)
@@ -338,11 +370,9 @@ void MonthlyReportState::calculateChanges()
 		{
 			_pactList.push_back((*k)->getRules()->getType());
 		}
-
 		// determine satisfaction level, sign pacts, adjust funding
 		// and update activity meters,
 		(*k)->newMonth(xcomTotal, alienTotal);
-
 		// and after they've made their decisions, calculate the difference, and add
 		// them to the appropriate lists.
 		_fundingDiff += (*k)->getFunding().back()-(*k)->getFunding().at((*k)->getFunding().size()-2);
@@ -358,7 +388,6 @@ void MonthlyReportState::calculateChanges()
 			break;
 		}
 	}
-
 	//calculate total.
 	_ratingTotal = xcomTotal - alienTotal;
 }

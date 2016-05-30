@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2015 OpenXcom Developers.
+ * Copyright 2010-2016 OpenXcom Developers.
  *
  * This file is part of OpenXcom.
  *
@@ -17,11 +17,10 @@
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "BuildNewBaseState.h"
-#include <cmath>
 #include "../fmath.h"
 #include "../Engine/Game.h"
 #include "../Engine/Action.h"
-#include "../Mod/ResourcePack.h"
+#include "../Mod/Mod.h"
 #include "../Engine/LocalizedText.h"
 #include "../Engine/Surface.h"
 #include "../Engine/Timer.h"
@@ -36,7 +35,6 @@
 #include "ConfirmNewBaseState.h"
 #include "../Engine/Options.h"
 #include "../Menu/ErrorMessageState.h"
-#include "../Mod/Ruleset.h"
 #include "../Mod/RuleInterface.h"
 
 namespace OpenXcom
@@ -127,7 +125,7 @@ BuildNewBaseState::BuildNewBaseState(Base *base, Globe *globe, bool first) : _ba
 	_btnRotateUp->setListButton();
 	_btnRotateDown->setListButton();
 
-	_window->setBackground(_game->getResourcePack()->getSurface("BACK01.SCR"));
+	_window->setBackground(_game->getMod()->getSurface("BACK01.SCR"));
 
 	_btnCancel->setText(tr("STR_CANCEL_UC"));
 	_btnCancel->onMouseClick((ActionHandler)&BuildNewBaseState::btnCancelClick);
@@ -254,7 +252,7 @@ void BuildNewBaseState::globeClick(Action *action)
 		}
 		else
 		{
-			_game->pushState(new ErrorMessageState(tr("STR_XCOM_BASE_CANNOT_BE_BUILT"), _palette, _game->getRuleset()->getInterface("geoscape")->getElement("genericWindow")->color, "BACK01.SCR", _game->getRuleset()->getInterface("geoscape")->getElement("palette")->color));
+			_game->pushState(new ErrorMessageState(tr("STR_XCOM_BASE_CANNOT_BE_BUILT"), _palette, _game->getMod()->getInterface("geoscape")->getElement("genericWindow")->color, "BACK01.SCR", _game->getMod()->getInterface("geoscape")->getElement("palette")->color));
 		}
 	}
 }
@@ -393,4 +391,5 @@ void BuildNewBaseState::resize(int &dX, int &dY)
 		}
 	}
 }
+
 }

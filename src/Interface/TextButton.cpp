@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2015 OpenXcom Developers.
+ * Copyright 2010-2016 OpenXcom Developers.
  *
  * This file is part of OpenXcom.
  *
@@ -87,9 +87,9 @@ Uint8 TextButton::getColor() const
 }
 
 /**
-* Changes the color for the text only.
-* @param color Color value.
-*/
+ * Changes the color for the text only.
+ * @param color Color value.
+ */
 void TextButton::setTextColor(Uint8 color)
 {
 	_text->setColor(color);
@@ -97,8 +97,8 @@ void TextButton::setTextColor(Uint8 color)
 }
 
 /**
-* Changes the text to use the big-size font.
-*/
+ * Changes the text to use the big-size font.
+ */
 void TextButton::setBig()
 {
 	_text->setBig();
@@ -106,8 +106,8 @@ void TextButton::setBig()
 }
 
 /**
-* Changes the text to use the small-size font.
-*/
+ * Changes the text to use the small-size font.
+ */
 void TextButton::setSmall()
 {
 	_text->setSmall();
@@ -115,9 +115,9 @@ void TextButton::setSmall()
 }
 
 /**
-* Returns the font currently used by the text.
-* @return Pointer to font.
-*/
+ * Returns the font currently used by the text.
+ * @return Pointer to font.
+ */
 Font *TextButton::getFont() const
 {
 	return _text->getFont();
@@ -291,7 +291,7 @@ void TextButton::mousePress(Action *action, State *state)
 	}
 
 	if (isButtonHandled(action->getDetails()->button.button))
-	{		
+	{
 		if (soundPress != 0 && _group == 0 &&
 			action->getDetails()->button.button != SDL_BUTTON_WHEELUP && action->getDetails()->button.button != SDL_BUTTON_WHEELDOWN)
 		{
@@ -317,7 +317,7 @@ void TextButton::mousePress(Action *action, State *state)
 void TextButton::mouseRelease(Action *action, State *state)
 {
 	if (isButtonHandled(action->getDetails()->button.button))
-	{	
+	{
 		draw();
 		//_redraw = true;
 	}
@@ -354,13 +354,9 @@ void TextButton::setHeight(int height)
 	_text->setHeight(height);
 }
 
-void TextButton::setSecondaryColor(Uint8 color)
-{
-	_text->setColor(color);
-	_redraw = true;
-}
 void TextButton::setGeoscapeButton(bool geo)
 {
 	_geoscapeButton = geo;
 }
+
 }

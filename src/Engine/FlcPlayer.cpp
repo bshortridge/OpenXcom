@@ -1,32 +1,35 @@
 /*
-* Copyright 2010-2015 OpenXcom Developers.
-*
-* This file is part of OpenXcom.
-*
-* OpenXcom is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* OpenXcom is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ * Copyright 2010-2016 OpenXcom Developers.
+ *
+ * This file is part of OpenXcom.
+ *
+ * OpenXcom is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * OpenXcom is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 /*
-* Based on http://www.libsdl.org/projects/flxplay/
-*/
-
+ * Based on http://www.libsdl.org/projects/flxplay/
+ */
+#ifdef _MSC_VER
+#define _SCL_SECURE_NO_WARNINGS
+#endif
 #include "FlcPlayer.h"
+#include <algorithm>
+#include <cassert>
 #include <string.h>
-#include <math.h>
+#include <cmath>
 #include <SDL_mixer.h>
 #include <fstream>
-
 #include "Logger.h"
 #include "Screen.h"
 #include "Surface.h"
@@ -86,13 +89,13 @@ FlcPlayer::~FlcPlayer()
 }
 
 /**
-* Initialize data structures needed buy the player and read the whole file into memory
-* @param filename Video file name
-* @param frameCallback Function to call each video frame
-* @param game Pointer to the Game instance
-* @param dx An offset on the x axis for the video to be rendered
-* @param dy An offset on the y axis for the video to be rendered
-*/
+ * Initialize data structures needed buy the player and read the whole file into memory
+ * @param filename Video file name
+ * @param frameCallback Function to call each video frame
+ * @param game Pointer to the Game instance
+ * @param dx An offset on the x axis for the video to be rendered
+ * @param dy An offset on the y axis for the video to be rendered
+ */
 bool FlcPlayer::init(const char *filename, void(*frameCallBack)(), Game *game, int dx, int dy)
 {
 	if (_fileBuf != 0)
@@ -159,10 +162,8 @@ bool FlcPlayer::init(const char *filename, void(*frameCallBack)(), Game *game, i
 	}
 	else // Otherwise create a new one
 	{
-		_mainScreen = SDL_AllocSurface(SDL_SWSURFACE, _screenWidth, _screenHeight, 8, 0, 0, 0, 0);
+		_mainScreen = SDL_AllocSurface(SDL_SWSURFACE, _realScreen->getSurface()->getWidth(), _realScreen->getSurface()->getHeight(), 8, 0, 0, 0, 0);
 	}
-
-	
 
 	return true;
 }
@@ -184,8 +185,8 @@ void FlcPlayer::deInit()
 }
 
 /**
-* Starts decoding and playing the FLI/FLC file
-*/
+ * Starts decoding and playing the FLI/FLC file
+ */
 void FlcPlayer::play(bool skipLastFrame)
 {
 	_playingState = PLAYING;
@@ -280,7 +281,7 @@ bool FlcPlayer::isValidFrame(Uint8 *frameHeader, Uint32 &frameSize, Uint16 &fram
 	readU16(frameType, frameHeader + 4);
 
 	return (frameType == FRAME_TYPE || frameType == AUDIO_CHUNK || frameType == PREFIX_CHUNK);
-} 
+}
 
 void FlcPlayer::decodeAudio(int frames)
 {
@@ -314,7 +315,7 @@ void FlcPlayer::decodeAudio(int frames)
 				++audioFramesFound;
 
 				break;
-		}	
+		}
 	}
 }
 
@@ -501,6 +502,8 @@ void FlcPlayer::color256()
 			_colors[i].b = *(pSrc++);
 		}
 
+		if (_mainScreen != _realScreen->getSurface()->getSurface())
+			SDL_SetColors(_mainScreen, _colors, numColorsSkip, numColors);
 		_realScreen->setPalette(_colors, numColorsSkip, numColors, true);
 
 		if (numColorPackets >= 1)
@@ -532,14 +535,14 @@ void FlcPlayer::fliSS2()
 		pSrc += 2;
 
 		if ((count & MASK) == SKIP_LINES) 
-		{  
+		{
 			pDst += (-count)*_mainScreen->pitch;
 			++lines;
 			continue;
 		}
 			
 		else if ((count & MASK) == LAST_PIXEL)
-		{  
+		{
 			setLastByte = true;
 			lastByte = (count & 0x00FF);
 			readS16(count, (Sint8 *)pSrc);
@@ -547,7 +550,7 @@ void FlcPlayer::fliSS2()
 		}
 
 		if ((count & MASK) == PACKETS_COUNT)
-		{      
+		{
 			pTmpDst = pDst;
 			while (count--) 
 			{
@@ -562,7 +565,7 @@ void FlcPlayer::fliSS2()
 					pSrc += (2 * countData);
 
 				}
-				else 
+				else
 				{
 					if (countData < 0) 
 					{
@@ -616,7 +619,7 @@ void FlcPlayer::fliBRun()
 				pTmpDst += countData;
 				pixels += countData;
 			}
-			else 
+			else
 			{
 				if (countData < 0) 
 				{
@@ -669,7 +672,7 @@ void FlcPlayer::fliLC()
 					*(pTmpDst++) = *(pSrc++);
 				}
 			}
-			else 
+			else
 			{
 				if (countData < 0) 
 				{
@@ -714,6 +717,8 @@ void FlcPlayer::color64()
 			_colors[i].b = *(pSrc++) << 2;
 		}
 
+		if (_mainScreen != _realScreen->getSurface()->getSurface())
+			SDL_SetColors(_mainScreen, _colors, NumColorsSkip, NumColors);
 		_realScreen->setPalette(_colors, NumColorsSkip, NumColors, true);
 	}
 }
@@ -902,7 +907,7 @@ void FlcPlayer::waitForNextFrame(Uint32 delay)
 		}
 	}
 	oldTick = SDL_GetTicks();
-} 
+}
 
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
 inline void FlcPlayer::readU16(Uint16 &dst, const Uint8 * const src)

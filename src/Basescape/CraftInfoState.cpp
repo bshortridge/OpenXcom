@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2015 OpenXcom Developers.
+ * Copyright 2010-2016 OpenXcom Developers.
  *
  * This file is part of OpenXcom.
  *
@@ -17,9 +17,10 @@
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "CraftInfoState.h"
+#include <cmath>
 #include <sstream>
 #include "../Engine/Game.h"
-#include "../Mod/ResourcePack.h"
+#include "../Mod/Mod.h"
 #include "../Engine/LocalizedText.h"
 #include "../Engine/Options.h"
 #include "../Interface/TextButton.h"
@@ -104,7 +105,7 @@ CraftInfoState::CraftInfoState(Base *base, size_t craftId) : _base(base), _craft
 	centerAllSurfaces();
 
 	// Set up objects
-	_window->setBackground(_game->getResourcePack()->getSurface("BACK14.SCR"));
+	_window->setBackground(_game->getMod()->getSurface("BACK14.SCR"));
 
 	_btnOk->setText(tr("STR_OK"));
 	_btnOk->onMouseClick((ActionHandler)&CraftInfoState::btnOkClick);
@@ -155,7 +156,7 @@ void CraftInfoState::init()
 	_edtCraft->setText(_craft->getName(_game->getLanguage()));
 
 	_sprite->clear();
-	SurfaceSet *texture = _game->getResourcePack()->getSurfaceSet("BASEBITS.PCK");
+	SurfaceSet *texture = _game->getMod()->getSurfaceSet("BASEBITS.PCK");
 	texture->getFrame(_craft->getRules()->getSprite() + 33)->setX(0);
 	texture->getFrame(_craft->getRules()->getSprite() + 33)->setY(0);
 	texture->getFrame(_craft->getRules()->getSprite() + 33)->blit(_sprite);
@@ -292,13 +293,12 @@ void CraftInfoState::init()
 		_txtW2Name->setVisible(false);
 		_txtW2Ammo->setVisible(false);
 	}
-	_defaultName = tr("STR_CRAFTNAME").arg(tr(_craft->getRules()->getType())).arg(_craft->getId());
 }
 
 /**
  * Turns an amount of time into a
  * day/hour string.
- * @param total
+ * @param total Amount in hours.
  */
 std::wstring CraftInfoState::formatTime(int total)
 {
@@ -380,10 +380,13 @@ void CraftInfoState::btnArmorClick(Action *)
  */
 void CraftInfoState::edtCraftChange(Action *action)
 {
-	_craft->setName(_edtCraft->getText());
-	if (_craft->getName(_game->getLanguage()) == _defaultName)
+	if (_edtCraft->getText() == _craft->getDefaultName(_game->getLanguage()))
 	{
 		_craft->setName(L"");
+	}
+	else
+	{
+		_craft->setName(_edtCraft->getText());
 	}
 	if (action->getDetails()->key.keysym.sym == SDLK_RETURN ||
 		action->getDetails()->key.keysym.sym == SDLK_KP_ENTER)

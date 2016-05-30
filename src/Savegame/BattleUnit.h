@@ -1,5 +1,6 @@
+#pragma once
 /*
- * Copyright 2010-2015 OpenXcom Developers.
+ * Copyright 2010-2016 OpenXcom Developers.
  *
  * This file is part of OpenXcom.
  *
@@ -16,11 +17,9 @@
  * You should have received a copy of the GNU General Public License
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef OPENXCOM_BATTLEUNIT_H
-#define OPENXCOM_BATTLEUNIT_H
-
 #include <vector>
 #include <string>
+#include <yaml-cpp/yaml.h>
 #include "../Battlescape/Position.h"
 #include "../Battlescape/BattlescapeGame.h"
 #include "../Mod/RuleItem.h"
@@ -44,14 +43,14 @@ class Soldier;
 class Armor;
 class SavedGame;
 class Language;
-class AlienBAIState;
-class CivilianBAIState;
+class AIModule;
+struct BattleUnitStatistics;
+struct StatAdjustment;
 
 enum UnitStatus {STATUS_STANDING, STATUS_WALKING, STATUS_FLYING, STATUS_TURNING, STATUS_AIMING, STATUS_COLLAPSING, STATUS_DEAD, STATUS_UNCONSCIOUS, STATUS_PANICKING, STATUS_BERSERK, STATUS_IGNORE_ME};
 enum UnitFaction {FACTION_PLAYER, FACTION_HOSTILE, FACTION_NEUTRAL};
 enum UnitSide {SIDE_FRONT, SIDE_LEFT, SIDE_RIGHT, SIDE_REAR, SIDE_UNDER};
 enum UnitBodyPart {BODYPART_HEAD, BODYPART_TORSO, BODYPART_RIGHTARM, BODYPART_LEFTARM, BODYPART_RIGHTLEG, BODYPART_LEFTLEG};
-
 
 /**
  * Represents a moving unit in the battlescape, player controlled or AI controlled
@@ -78,17 +77,17 @@ private:
 	std::vector<Tile *> _visibleTiles;
 	int _tu, _energy, _health, _morale, _stunlevel;
 	bool _kneeled, _floating, _dontReselect;
-	int _currentArmor[5];
+	int _currentArmor[5], _maxArmor[5];
 	int _fatalWounds[6];
 	int _fire;
 	std::vector<BattleItem*> _inventory;
 	BattleItem* _specWeapon[SPEC_WEAPON_MAX];
-	BattleAIState *_currentAIState;
+	AIModule *_currentAIState;
 	bool _visible;
 	Surface *_cache[5];
 	bool _cacheInvalid;
 	int _expBravery, _expReactions, _expFiring, _expThrowing, _expPsiSkill, _expPsiStrength, _expMelee;
-	int improveStat(int exp);
+	int improveStat(int exp) const;
 	int _motionPoints;
 	int _kills;
 	int _faceDirection; // used only during strafeing moves
@@ -99,6 +98,12 @@ private:
 	int _turnsSinceSpotted;
 	std::string _spawnUnit;
 	std::string _activeHand;
+	BattleUnitStatistics* _statistics;
+	int _murdererId;	// used to credit the murderer with the kills that this unit got by blowing up on death
+	int _mindControllerID;	// used to credit the mind controller with the kills of the mind controllee
+	UnitSide _fatalShotSide;
+	UnitBodyPart _fatalShotBodyPart;
+	std::string _murdererWeapon, _murdererWeaponAmmo;
 
 	// static data
 	std::string _type;
@@ -107,7 +112,8 @@ private:
 	std::wstring _name;
 	UnitStats _stats;
 	int _standHeight, _kneelHeight, _floatHeight;
-	int _value, _deathSound, _aggroSound, _moveSound;
+	std::vector<int> _deathSound;
+	int _value, _aggroSound, _moveSound;
 	int _intelligence, _aggression;
 	SpecialAbility _specab;
 	Armor *_armor;
@@ -130,7 +136,7 @@ public:
 	/// Creates a BattleUnit from solder.
 	BattleUnit(Soldier *soldier, int depth);
 	/// Creates a BattleUnit from unit.
-	BattleUnit(Unit *unit, UnitFaction faction, int id, Armor *armor, int diff, int depth);
+	BattleUnit(Unit *unit, UnitFaction faction, int id, Armor *armor, StatAdjustment *adjustment, int depth);
 	/// Cleans up the BattleUnit.
 	~BattleUnit();
 	/// Loads the unit from YAML.
@@ -254,6 +260,8 @@ public:
 	void setArmor(int armor, UnitSide side);
 	/// Get armor value.
 	int getArmor(UnitSide side) const;
+	/// Get max armor value.
+	int getMaxArmor(UnitSide side) const;
 	/// Get total number of fatal wounds.
 	int getFatalWounds() const;
 	/// Get the current reaction score.
@@ -276,10 +284,10 @@ public:
 	std::vector<BattleItem*> *getInventory();
 	/// Let AI do their thing.
 	void think(BattleAction *action);
-	/// Get current AI state.
-	BattleAIState *getCurrentAIState() const;
-	/// Set next AI State
-	void setAIState(BattleAIState *aiState);
+	/// Get AI Module.
+	AIModule *getAIModule() const;
+	/// Set AI Module.
+	void setAIModule(AIModule *ai);
 	/// Set whether this unit is visible
 	void setVisible(bool flag);
 	/// Get whether this unit is visible
@@ -317,7 +325,7 @@ public:
 	/// Adds one to the melee exp counter.
 	void addMeleeExp();
 	/// Updates the stats of a Geoscape soldier.
-	void updateGeoscapeStats(Soldier *soldier);
+	void updateGeoscapeStats(Soldier *soldier) const;
 	/// Check if unit eligible for squaddie promotion.
 	bool postMissionProcedures(SavedGame *geoscape);
 	/// Get the sprite index for the minimap
@@ -350,8 +358,8 @@ public:
 	int getLoftemps(int entry = 0) const;
 	/// Get the unit's value.
 	int getValue() const;
-	/// Get the unit's death sound.
-	int getDeathSound() const;
+	/// Get the unit's death sounds.
+	const std::vector<int> &getDeathSounds() const;
 	/// Get the unit's move sound.
 	int getMoveSound() const;
 	/// Get whether the unit is affected by fatal wounds.
@@ -367,7 +375,7 @@ public:
 	/// Set the units's respawn flag.
 	void setRespawn(bool respawn);
 	/// Get the units's respawn flag.
-	bool getRespawn();
+	bool getRespawn() const;
 	/// Get the units's rank string.
 	std::string getRankString() const;
 	/// Get the geoscape-soldier object.
@@ -382,6 +390,8 @@ public:
 	std::string getActiveHand() const;
 	/// Convert's unit to a faction
 	void convertToFaction(UnitFaction f);
+	/// Set health to 0
+	void kill();
 	/// Set health to 0 and set status dead
 	void instaKill();
 	/// Gets the unit's spawn unit.
@@ -392,8 +402,6 @@ public:
 	int getAggroSound() const;
 	/// Sets the unit's energy level.
 	void setEnergy(int energy);
-	/// Halve the unit's armor values.
-	void halveArmor();
 	/// Get the faction that killed this unit.
 	UnitFaction killedBy() const;
 	/// Set the faction that killed this unit.
@@ -427,7 +435,7 @@ public:
 	/// this function checks if a tile is visible, using maths.
 	bool checkViewSector(Position pos) const;
 	/// adjust this unit's stats according to difficulty.
-	void adjustStats(const int diff);
+	void adjustStats(const StatAdjustment &adjustment);
 	/// did this unit already take fire damage this turn? (used to avoid damaging large units multiple times.)
 	bool tookFireDamage() const;
 	/// switch the state of the fire damage tracker.
@@ -445,25 +453,48 @@ public:
 	/// Set the flag for "floor above me" meaning stop rendering bubbles.
 	void setFloorAbove(bool floor);
 	/// Get the flag for "floor above me".
-	bool getFloorAbove();
+	bool getFloorAbove() const;
 	/// Get any melee weapon we may be carrying, or a built in one.
 	BattleItem *getMeleeWeapon();
 	/// Use this function to check the unit's movement type.
 	MovementType getMovementType() const;
 	/// Checks if this unit is in hiding for a turn.
-	bool isHiding() {return _hidingForTurn; };
+	bool isHiding() const {return _hidingForTurn; };
 	/// Sets this unit is in hiding for a turn (or not).
 	void setHiding(bool hiding) { _hidingForTurn = hiding; };
 	/// Puts the unit in the corner to think about what he's done.
 	void goToTimeOut();
 	/// Create special weapon for unit.
-	void setSpecialWeapon(SavedBattleGame *save, const Ruleset *rule);
+	void setSpecialWeapon(SavedBattleGame *save, const Mod *mod);
 	/// Get special weapon.
 	BattleItem *getSpecialWeapon(BattleType type) const;
 	/// Recovers the unit's time units and energy.
 	void recoverTimeUnits();
+	/// Get the unit's mission statistics.
+	BattleUnitStatistics* getStatistics();
+	/// Set the unit murderer's id.
+	void setMurdererId(int id);
+	/// Get the unit murderer's id.
+	int getMurdererId() const;
+	/// Set information on the unit's fatal shot.
+	void setFatalShotInfo(UnitSide side, UnitBodyPart bodypart);
+	/// Get information on the unit's fatal shot's side.
+	UnitSide getFatalShotSide() const;
+	/// Get information on the unit's fatal shot's body part.
+	UnitBodyPart getFatalShotBodyPart() const;
+	/// Get the unit murderer's weapon.
+	std::string getMurdererWeapon() const;
+	/// Set the unit murderer's weapon.
+	void setMurdererWeapon(std::string weapon);
+	/// Get the unit murderer's weapon's ammo.
+	std::string getMurdererWeaponAmmo() const;
+	/// Set the unit murderer's weapon's ammo.
+	void setMurdererWeaponAmmo(std::string weaponAmmo);
+	/// Set the unit mind controller's id.
+	void setMindControllerId(int id);
+	/// Get the unit mind controller's id.
+	int getMindControllerId() const;
+	
 };
 
 }
-
-#endif

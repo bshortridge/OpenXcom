@@ -51,5 +51,13 @@ extraSprites: #done
     subY: 3
     files:
       0: Resources/UI/globe_tftd.png
-
-
+  - type: BIGOBS.PCK
+    width: 288
+    height: 48
+    subX: 32
+    subY: 48
+    files:
+      -9: Resources/Weapons/Terror.png
+  - type: TDXCOM_2.PCK
+    files:
+      233: Resources/Sprite/missing_arm.png

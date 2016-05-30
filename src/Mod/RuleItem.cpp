@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2015 OpenXcom Developers.
+ * Copyright 2010-2016 OpenXcom Developers.
  *
  * This file is part of OpenXcom.
  *
@@ -20,6 +20,7 @@
 #include "RuleInventory.h"
 #include "../Engine/SurfaceSet.h"
 #include "../Engine/Surface.h"
+#include "Mod.h"
 
 namespace OpenXcom
 {
@@ -29,7 +30,7 @@ namespace OpenXcom
  * @param type String defining the type.
  */
 RuleItem::RuleItem(const std::string &type) : _type(type), _name(type), _size(0.0), _costBuy(0), _costSell(0), _transferTime(24), _weight(3), _bigSprite(-1), _floorSprite(-1), _handSprite(120), _bulletSprite(-1), _fireSound(-1), _hitSound(-1), _hitAnimation(-1), _power(0), _damageType(DT_NONE),
-											_accuracyAuto(0), _accuracySnap(0), _accuracyAimed(0), _tuAuto(0), _tuSnap(0), _tuAimed(0), _clipSize(0), _accuracyMelee(0), _tuMelee(0), _battleType(BT_NONE), _twoHanded(false), _waypoint(false), _fixedWeapon(false), _invWidth(1), _invHeight(1),
+											_accuracyAuto(0), _accuracySnap(0), _accuracyAimed(0), _tuAuto(0), _tuSnap(0), _tuAimed(0), _clipSize(0), _accuracyMelee(0), _tuMelee(0), _battleType(BT_NONE), _twoHanded(false), _fixedWeapon(false), _waypoints(0), _invWidth(1), _invHeight(1),
 											_painKiller(0), _heal(0), _stimulant(0), _woundRecovery(0), _healthRecovery(0), _stunRecovery(0), _energyRecovery(0), _tuUse(0), _recoveryPoints(0), _armor(20), _turretType(-1), _recover(true), _liveAlien(false), _blastRadius(-1), _attraction(0),
 											_flatRate(false), _arcingShot(false), _listOrder(0), _maxRange(200), _aimRange(200), _snapRange(15), _autoRange(7), _minRange(0), _dropoff(2), _bulletSpeed(0), _explosionSpeed(0), _autoShots(3), _shotgunPellets(0),
 											_strengthApplied(false), _skillApplied(true), _LOSRequired(false), _underwaterOnly(false), _meleeSound(39), _meleePower(0), _meleeAnimation(0), _meleeHitSound(-1), _specialType(-1), _vaporColor(-1), _vaporDensity(0), _vaporProbability(15)
@@ -46,10 +47,10 @@ RuleItem::~RuleItem()
 /**
  * Loads the item from a YAML file.
  * @param node YAML node.
- * @param modIndex Offsets the sounds and sprite values to avoid conflicts.
+ * @param mod Mod for the item.
  * @param listOrder The list weight for this item.
  */
-void RuleItem::load(const YAML::Node &node, int modIndex, int listOrder)
+void RuleItem::load(const YAML::Node &node, Mod *mod, int listOrder)
 {
 	_type = node["type"].as<std::string>(_type);
 	_name = node["name"].as<std::string>(_name);
@@ -61,73 +62,46 @@ void RuleItem::load(const YAML::Node &node, int modIndex, int listOrder)
 	_weight = node["weight"].as<int>(_weight);
 	if (node["bigSprite"])
 	{
-		_bigSprite = node["bigSprite"].as<int>(_bigSprite);
-		// BIGOBS.PCK: 57 entries
-		if (_bigSprite > 56)
-			_bigSprite += modIndex;
+		_bigSprite = mod->getSpriteOffset(node["bigSprite"].as<int>(_bigSprite), "BIGOBS.PCK");
 	}
 	if (node["floorSprite"])
 	{
-		_floorSprite = node["floorSprite"].as<int>(_floorSprite);
-		// FLOOROB.PCK: 73 entries
-		if (_floorSprite > 72)
-			_floorSprite += modIndex;
+		_floorSprite = mod->getSpriteOffset(node["floorSprite"].as<int>(_floorSprite), "FLOOROB.PCK");
 	}
 	if (node["handSprite"])
 	{
-		_handSprite = node["handSprite"].as<int>(_handSprite);
-		// HANDOBS.PCK: 128 entries
-		if (_handSprite > 127)
-			_handSprite += modIndex;
+		_handSprite = mod->getSpriteOffset(node["handSprite"].as<int>(_handSprite), "HANDOB.PCK");
 	}
 	if (node["bulletSprite"])
 	{
 		// Projectiles: 385 entries ((105*33) / (3*3)) (35 sprites per projectile(0-34), 11 projectiles (0-10))
 		_bulletSprite = node["bulletSprite"].as<int>(_bulletSprite) * 35;
 		if (_bulletSprite >= 385)
-			_bulletSprite += modIndex;
+			_bulletSprite += mod->getModOffset();
 	}
 	if (node["fireSound"])
 	{
-		_fireSound = node["fireSound"].as<int>(_fireSound);
-		// BATTLE.CAT: 55 entries
-		if (_fireSound > 54)
-			_fireSound += modIndex;
+		_fireSound = mod->getSoundOffset(node["fireSound"].as<int>(_fireSound), "BATTLE.CAT");
 	}
 	if (node["hitSound"])
-	{		
-		_hitSound = node["hitSound"].as<int>(_hitSound);
-		// BATTLE.CAT: 55 entries
-		if (_hitSound > 54)
-			_hitSound += modIndex;
+	{
+		_hitSound = mod->getSoundOffset(node["hitSound"].as<int>(_hitSound), "BATTLE.CAT");
 	}
 	if (node["meleeSound"])
 	{
-		_meleeSound = node["meleeSound"].as<int>(_meleeSound);
-		// BATTLE.CAT: 55 entries
-		if (_meleeSound > 54)
-			_meleeSound += modIndex;
+		_meleeSound = mod->getSoundOffset(node["meleeSound"].as<int>(_meleeSound), "BATTLE.CAT");
 	}
 	if (node["hitAnimation"])
-	{		
-		_hitAnimation = node["hitAnimation"].as<int>(_hitAnimation);
-		// SMOKE.PCK: 56 entries
-		if (_hitAnimation > 55)
-			_hitAnimation += modIndex;
+	{
+		_hitAnimation = mod->getSpriteOffset(node["hitAnimation"].as<int>(_hitAnimation), "SMOKE.PCK");
 	}
 	if (node["meleeAnimation"])
 	{
-		_meleeAnimation = node["meleeAnimation"].as<int>(_meleeAnimation);
-		// HIT.PCK: 4 entries
-		if (_meleeAnimation > 3)
-			_meleeAnimation += modIndex;
+		_meleeAnimation = mod->getSpriteOffset(node["meleeAnimation"].as<int>(_meleeAnimation), "HIT.PCK");
 	}
 	if (node["meleeHitSound"])
 	{
-		_meleeHitSound = node["meleeHitSound"].as<int>(_meleeHitSound);
-		// BATTLE.CAT: 55 entries
-		if (_meleeHitSound > 54)
-			_meleeHitSound += modIndex;
+		_meleeHitSound = mod->getSoundOffset(node["meleeHitSound"].as<int>(_meleeHitSound), "BATTLE.CAT");
 	}
 	_power = node["power"].as<int>(_power);
 	_compatibleAmmo = node["compatibleAmmo"].as< std::vector<std::string> >(_compatibleAmmo);
@@ -143,7 +117,7 @@ void RuleItem::load(const YAML::Node &node, int modIndex, int listOrder)
 	_tuMelee = node["tuMelee"].as<int>(_tuMelee);
 	_battleType = (BattleType)node["battleType"].as<int>(_battleType);
 	_twoHanded = node["twoHanded"].as<bool>(_twoHanded);
-	_waypoint = node["waypoint"].as<bool>(_waypoint);
+	_waypoints = node["waypoints"].as<int>(_waypoints);
 	_fixedWeapon = node["fixedWeapon"].as<bool>(_fixedWeapon);
 	_invWidth = node["invWidth"].as<int>(_invWidth);
 	_invHeight = node["invHeight"].as<int>(_invHeight);
@@ -185,7 +159,6 @@ void RuleItem::load(const YAML::Node &node, int modIndex, int listOrder)
 	_vaporColor = node["vaporColor"].as<int>(_vaporColor);
 	_vaporDensity = node["vaporDensity"].as<int>(_vaporDensity);
 	_vaporProbability = node["vaporProbability"].as<int>(_vaporProbability);
-
 	if (!_listOrder)
 	{
 		_listOrder = listOrder;
@@ -310,9 +283,9 @@ bool RuleItem::isTwoHanded() const
  * Returns whether this item uses waypoints.
  * @return True if it uses waypoints.
  */
-bool RuleItem::isWaypoint() const
+int RuleItem::getWaypoints() const
 {
-	return _waypoint;
+	return _waypoints;
 }
 
 /**
@@ -777,27 +750,27 @@ int RuleItem::getExplosionSpeed() const
 }
 
 /**
-* Gets the amount of auto shots fired by this weapon.
-* @return The shots.
-*/
+ * Gets the amount of auto shots fired by this weapon.
+ * @return The shots.
+ */
 int RuleItem::getAutoShots() const
 {
 	return _autoShots;
 }
 
 /**
-* is this item a rifle?
-* @return whether or not it is a rifle.
-*/
+ * is this item a rifle?
+ * @return whether or not it is a rifle.
+ */
 bool RuleItem::isRifle() const
 {
 	return (_battleType == BT_FIREARM || _battleType == BT_MELEE) && _twoHanded;
 }
 
 /**
-* is this item a pistol?
-* @return whether or not it is a pistol.
-*/
+ * is this item a pistol?
+ * @return whether or not it is a pistol.
+ */
 bool RuleItem::isPistol() const
 {
 	return (_battleType == BT_FIREARM || _battleType == BT_MELEE) && !_twoHanded;

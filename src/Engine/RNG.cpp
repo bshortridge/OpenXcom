@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2015 OpenXcom Developers.
+ * Copyright 2010-2016 OpenXcom Developers.
  *
  * This file is part of OpenXcom.
  *
@@ -17,7 +17,7 @@
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "RNG.h"
-#include <math.h>
+#include <cmath>
 #include <time.h>
 #include <stdlib.h>
 #ifndef UINT64_MAX
@@ -52,18 +52,18 @@ uint64_t next()
 }
 
 /**
-* Returns the current seed in use by the generator.
-* @return Current seed.
-*/
+ * Returns the current seed in use by the generator.
+ * @return Current seed.
+ */
 uint64_t getSeed()
 {
 	return x;
 }
 
 /**
-* Changes the current seed in use by the generator.
-* @param n New seed.
-*/
+ * Changes the current seed in use by the generator.
+ * @param n New seed.
+ */
 void setSeed(uint64_t n)
 {
 	x = n;
@@ -164,4 +164,5 @@ int generateEx(int max)
 }
 
 }
+
 }

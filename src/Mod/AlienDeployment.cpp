@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2015 OpenXcom Developers.
+ * Copyright 2010-2016 OpenXcom Developers.
  *
  * This file is part of OpenXcom.
  *
@@ -113,8 +113,9 @@ namespace OpenXcom
  * type of deployment data.
  * @param type String defining the type.
  */
-AlienDeployment::AlienDeployment(const std::string &type) : _type(type), _width(0), _length(0), _height(0), _civilians(0), _shade(-1), _finalDestination(false), _markerIcon(-1), _durationMin(0), _durationMax(0),
-	_minDepth(0), _maxDepth(0), _minSiteDepth(0), _maxSiteDepth(0), _objectiveType(-1), _objectivesRequired(0), _objectiveCompleteScore(0), _objectiveFailedScore(0), _despawnPenalty(0), _points(0)
+AlienDeployment::AlienDeployment(const std::string &type) : _type(type), _width(0), _length(0), _height(0), _civilians(0), _shade(-1), _finalDestination(false), _alert("STR_ALIENS_TERRORISE"),
+	_alertBackground("BACK03.SCR"), _markerName("STR_TERROR_SITE"), _markerIcon(-1), _durationMin(0), _durationMax(0), _minDepth(0), _maxDepth(0), _minSiteDepth(0), _maxSiteDepth(0),
+	_objectiveType(-1), _objectivesRequired(0), _objectiveCompleteScore(0), _objectiveFailedScore(0), _despawnPenalty(0), _points(0), _turnLimit(0), _cheatTurn(20), _chronoTrigger(FORCE_LOSE)
 {
 }
 
@@ -146,6 +147,7 @@ void AlienDeployment::load(const YAML::Node &node)
 	_loseCutscene = node["loseCutscene"].as<std::string>(_loseCutscene);
 	_script = node["script"].as<std::string>(_script);
 	_alert = node["alert"].as<std::string>(_alert);
+	_alertBackground = node["alertBackground"].as<std::string>(_alertBackground);
 	_briefingData = node["briefing"].as<BriefingData>(_briefingData);
 	_markerName = node["markerName"].as<std::string>(_markerName);
 	_markerIcon = node["markerIcon"].as<int>(_markerIcon);
@@ -164,10 +166,7 @@ void AlienDeployment::load(const YAML::Node &node)
 		_durationMin = node["duration"][0].as<int>(_durationMin);
 		_durationMax = node["duration"][1].as<int>(_durationMax);
 	}
-	for (YAML::const_iterator i = node["music"].begin(); i != node["music"].end(); ++i)
-	{
-		_music.push_back((*i).as<std::string>(""));
-	}
+	_music = node["music"].as< std::vector<std::string> >(_music);
 	_objectiveType = node["objectiveType"].as<int>(_objectiveType);
 	_objectivesRequired = node["objectivesRequired"].as<int>(_objectivesRequired);
 	_objectivePopup = node["objectivePopup"].as<std::string>(_objectivePopup);
@@ -184,6 +183,9 @@ void AlienDeployment::load(const YAML::Node &node)
 	}
 	_despawnPenalty = node["despawnPenalty"].as<int>(_despawnPenalty);
 	_points = node["points"].as<int>(_points);
+	_cheatTurn = node["cheatTurn"].as<int>(_cheatTurn);
+	_turnLimit = node["turnLimit"].as<int>(_turnLimit);
+	_chronoTrigger = ChronoTrigger(node["chronoTrigger"].as<int>(_chronoTrigger));
 }
 
 /**
@@ -211,7 +213,7 @@ std::vector<DeploymentData>* AlienDeployment::getDeploymentData()
  * @param length Length.
  * @param height Height.
  */
-void AlienDeployment::getDimensions(int *width, int *length, int *height)
+void AlienDeployment::getDimensions(int *width, int *length, int *height) const
 {
 	*width = _width;
 	*length = _length;
@@ -309,6 +311,15 @@ std::string AlienDeployment::getAlertMessage() const
 }
 
 /**
+* Gets the alert background displayed when this mission spawns.
+* @return Sprite ID for the background.
+*/
+std::string AlienDeployment::getAlertBackground() const
+{
+	return _alertBackground;
+}
+
+/**
  * Gets the briefing data for this mission type.
  * @return data for the briefing window to use.
  */
@@ -366,7 +377,7 @@ std::vector<std::string> &AlienDeployment::getMusic()
  * Gets The minimum depth for this deployment.
  * @return The minimum depth.
  */
-int AlienDeployment::getMinDepth()
+int AlienDeployment::getMinDepth() const
 {
 	return _minDepth;
 }
@@ -375,7 +386,7 @@ int AlienDeployment::getMinDepth()
  * Gets The maximum depth for this deployment.
  * @return The maximum depth.
  */
-int AlienDeployment::getMaxDepth()
+int AlienDeployment::getMaxDepth() const
 {
 	return _maxDepth;
 }
@@ -384,7 +395,7 @@ int AlienDeployment::getMaxDepth()
  * Gets The minimum depth for this deployment's mission site.
  * @return The minimum depth.
  */
-int AlienDeployment::getMinSiteDepth()
+int AlienDeployment::getMinSiteDepth() const
 {
 	return _minSiteDepth;
 }
@@ -393,7 +404,7 @@ int AlienDeployment::getMinSiteDepth()
  * Gets The maximum depth for this deployment's mission site.
  * @return The maximum depth.
  */
-int AlienDeployment::getMaxSiteDepth()
+int AlienDeployment::getMaxSiteDepth() const
 {
 	return _maxSiteDepth;
 }
@@ -402,7 +413,7 @@ int AlienDeployment::getMaxSiteDepth()
  * Gets the target type for this mission (ie: alien control consoles and synonium devices).
  * @return the target type for this mission.
  */
-int AlienDeployment::getObjectiveType()
+int AlienDeployment::getObjectiveType() const
 {
 	return _objectiveType;
 }
@@ -411,7 +422,7 @@ int AlienDeployment::getObjectiveType()
  * Gets the number of objectives required by this mission.
  * @return the number of objectives required.
  */
-int AlienDeployment::getObjectivesRequired()
+int AlienDeployment::getObjectivesRequired() const
 {
 	return _objectivesRequired;
 }
@@ -420,7 +431,7 @@ int AlienDeployment::getObjectivesRequired()
  * Gets the string name for the popup to splash when the objective conditions are met.
  * @return the string to pop up.
  */
-std::string AlienDeployment::getObjectivePopup()
+std::string AlienDeployment::getObjectivePopup() const
 {
 	return _objectivePopup;
 }
@@ -431,11 +442,11 @@ std::string AlienDeployment::getObjectivePopup()
  * @param &score a reference to the score we wish to alter.
  * @return if there is anything worthwhile processing.
  */
-bool AlienDeployment::getObjectiveCompleteInfo(std::string &text, int &score)
+bool AlienDeployment::getObjectiveCompleteInfo(std::string &text, int &score) const
 {
 	text = _objectiveCompleteText;
 	score = _objectiveCompleteScore;
-	return text != "";
+	return !text.empty();
 }
 
 /**
@@ -444,11 +455,11 @@ bool AlienDeployment::getObjectiveCompleteInfo(std::string &text, int &score)
  * @param &score a reference to the score we wish to alter.
  * @return if there is anything worthwhile processing.
  */
-bool AlienDeployment::getObjectiveFailedInfo(std::string &text, int &score)
+bool AlienDeployment::getObjectiveFailedInfo(std::string &text, int &score) const
 {
 	text = _objectiveFailedText;
 	score = _objectiveFailedScore;
-	return text != "";
+	return !text.empty();
 }
 
 /**
@@ -468,4 +479,32 @@ int AlienDeployment::getPoints() const
 {
 	return _points;
 }
+
+/**
+ * Gets the maximum number of turns we have before this mission ends.
+ * @return the turn limit.
+ */
+int AlienDeployment::getTurnLimit() const
+{
+	return _turnLimit;
+}
+
+/**
+ * Gets the action type to perform when the timer expires.
+ * @return the action type to perform.
+ */
+ChronoTrigger AlienDeployment::getChronoTrigger() const
+{
+	return _chronoTrigger;
+}
+
+/**
+ * Gets the turn at which the players become exposed to the AI.
+ * @return the turn to start cheating.
+ */
+int AlienDeployment::getCheatTurn() const
+{
+	return _cheatTurn;
+}
+
 }

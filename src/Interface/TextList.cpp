@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2015 OpenXcom Developers.
+ * Copyright 2010-2016 OpenXcom Developers.
  *
  * This file is part of OpenXcom.
  *
@@ -38,7 +38,7 @@ namespace OpenXcom
  * @param x X position in pixels.
  * @param y Y position in pixels.
  */
-TextList::TextList(int width, int height, int x, int y) : InteractiveSurface(width, height, x, y), _big(0), _small(0), _font(0), _scroll(0), _visibleRows(0), _selRow(0), _color(0), _dot(false), _selectable(false), _condensed(false), _contrast(false), _wrap(false),
+TextList::TextList(int width, int height, int x, int y) : InteractiveSurface(width, height, x, y), _big(0), _small(0), _font(0), _scroll(0), _visibleRows(0), _selRow(0), _color(0), _dot(false), _selectable(false), _condensed(false), _contrast(false), _wrap(false), _flooding(false),
 																								   _bg(0), _selector(0), _margin(0), _scrolling(true), _arrowPos(-1), _scrollPos(4), _arrowType(ARROW_VERTICAL),
 																								   _leftClick(0), _leftPress(0), _leftRelease(0), _rightClick(0), _rightPress(0), _rightRelease(0), _arrowsLeftEdge(0), _arrowsRightEdge(0), _comboBox(0)
 {
@@ -81,9 +81,9 @@ TextList::~TextList()
 }
 
 /**
-* Changes the position of the surface in the X axis.
-* @param x X position in pixels.
-*/
+ * Changes the position of the surface in the X axis.
+ * @param x X position in pixels.
+ */
 void TextList::setX(int x)
 {
 	Surface::setX(x);
@@ -95,9 +95,9 @@ void TextList::setX(int x)
 }
 
 /**
-* Changes the position of the surface in the Y axis.
-* @param y Y position in pixels.
-*/
+ * Changes the position of the surface in the Y axis.
+ * @param y Y position in pixels.
+ */
 void TextList::setY(int y)
 {
 	Surface::setY(y);
@@ -268,14 +268,38 @@ size_t TextList::getVisibleRows() const
 void TextList::addRow(int cols, ...)
 {
 	va_list args;
+	int ncols;
 	va_start(args, cols);
-	std::vector<Text*> temp;
-	int rowX = 0, rows = 1, rowHeight = 0;
-
-	for (int i = 0; i < cols; ++i)
+	if (cols > 0)
 	{
+		ncols = cols;
+	}
+	else
+	{
+		ncols = 1;
+	}
+
+	std::vector<Text*> temp;
+	// Positions are relative to list surface.
+	int rowX = 0, rowY = 0, rows = 1, rowHeight = 0;
+	if (!_texts.empty())
+	{
+		rowY = _texts.back().front()->getY() + _texts.back().front()->getHeight() + _font->getSpacing();
+	}
+
+	for (int i = 0; i < ncols; ++i)
+	{
+		int width;
 		// Place text
-		Text* txt = new Text(_columns[i], _font->getHeight(), _margin + rowX, getY());
+		if (_flooding)
+		{
+			width = 340;
+		}
+		else
+		{
+			width = _columns[i];
+		}
+		Text* txt = new Text(width, _font->getHeight(), _margin + rowX, rowY);
 		txt->setPalette(this->getPalette());
 		txt->initText(_big, _small, _lang);
 		txt->setColor(_color);
@@ -293,7 +317,8 @@ void TextList::addRow(int cols, ...)
 		{
 			txt->setSmall();
 		}
-		txt->setText(va_arg(args, wchar_t*));
+		if (cols > 0)
+			txt->setText(va_arg(args, wchar_t*));
 		// grab this before we enable word wrapping so we can use it to calculate
 		// the total row height below
 		int vmargin = _font->getHeight() - txt->getTextHeight();
@@ -341,8 +366,8 @@ void TextList::addRow(int cols, ...)
 		_rows.push_back(_texts.size() - 1);
 	}
 
-
 	// Place arrow buttons
+	// Position defined w.r.t. main window, NOT TextList.
 	if (_arrowPos != -1)
 	{
 		ArrowShape shape1, shape2;
@@ -1143,7 +1168,7 @@ void TextList::mouseOver(Action *action, State *state)
 			_selector->copy(_bg);
 			if (_contrast)
 			{
-				_selector->offset(-10, 1);
+				_selector->offsetBlock(-5);
 			}
 			else if (_comboBox)
 			{
@@ -1151,7 +1176,7 @@ void TextList::mouseOver(Action *action, State *state)
 			}
 			else
 			{
-				_selector->offset(-10, Palette::backPos);
+				_selector->offsetBlock(-10);
 			}
 			_selector->setVisible(true);
 		}
@@ -1231,4 +1256,10 @@ int TextList::getScrollbarColor()
 {
 	return _scrollbar->getColor();
 }
+
+void TextList::setFlooding(bool flooding)
+{
+	_flooding = flooding;
+}
+
 }

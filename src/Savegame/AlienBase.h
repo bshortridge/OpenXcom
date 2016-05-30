@@ -1,5 +1,6 @@
+#pragma once
 /*
- * Copyright 2010-2015 OpenXcom Developers.
+ * Copyright 2010-2016 OpenXcom Developers.
  *
  * This file is part of OpenXcom.
  *
@@ -16,9 +17,6 @@
  * You should have received a copy of the GNU General Public License
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef OPENXCOM_ALIENBASE_H
-#define OPENXCOM_ALIENBASE_H
-
 #include "Target.h"
 #include <string>
 #include <yaml-cpp/yaml.h>
@@ -50,8 +48,8 @@ public:
 	int getId() const;
 	/// Sets the alien base's ID.
 	void setId(int id);
-	/// Gets the alien base's name.
-	std::wstring getName(Language *lang) const;
+	/// Gets the alien base's default name.
+	std::wstring getDefaultName(Language *lang) const;
 	/// Gets the alien base's marker.
 	int getMarker() const;
 	/// Gets the alien base's amount of active hours..
@@ -69,5 +67,3 @@ public:
 };
 
 }
-
-#endif

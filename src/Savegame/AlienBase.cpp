@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2015 OpenXcom Developers.
+ * Copyright 2010-2016 OpenXcom Developers.
  *
  * This file is part of OpenXcom.
  *
@@ -96,11 +96,11 @@ void AlienBase::setId(int id)
 }
 
 /**
- * Returns the alien base's unique identifying name.
+ * Returns the alien base's unique default name.
  * @param lang Language to get strings from.
  * @return Full name.
  */
-std::wstring AlienBase::getName(Language *lang) const
+std::wstring AlienBase::getDefaultName(Language *lang) const
 {
 	return lang->getString("STR_ALIEN_BASE_").arg(_id);
 }

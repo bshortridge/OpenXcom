@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2015 OpenXcom Developers.
+ * Copyright 2010-2016 OpenXcom Developers.
  *
  * This file is part of OpenXcom.
  *
@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <cmath>
+#include <algorithm>
 #include "../fmath.h"
 #include "MiniMapView.h"
 #include "MiniMapState.h"
@@ -27,7 +27,7 @@
 #include "../Savegame/SavedBattleGame.h"
 #include "../Engine/Game.h"
 #include "../Engine/SurfaceSet.h"
-#include "../Mod/ResourcePack.h"
+#include "../Mod/Mod.h"
 #include "../Mod/Armor.h"
 #include "../Engine/Options.h"
 #include "../Engine/Screen.h"
@@ -50,7 +50,7 @@ const int MAX_FRAME = 2;
  */
 MiniMapView::MiniMapView(int w, int h, int x, int y, Game * game, Camera * camera, SavedBattleGame * battleGame) : InteractiveSurface(w, h, x, y), _game(game), _camera(camera), _battleGame(battleGame), _frame(0), _isMouseScrolling(false), _isMouseScrolled(false), _xBeforeMouseScrolling(0), _yBeforeMouseScrolling(0), _mouseScrollX(0), _mouseScrollY(0), _totalMouseMoveX(0), _totalMouseMoveY(0), _mouseMovedOverThreshold(false)
 {
-	_set = _game->getResourcePack()->getSurfaceSet("SCANG.DAT");
+	_set = _game->getMod()->getSurfaceSet("SCANG.DAT");
 }
 
 /**
@@ -295,10 +295,13 @@ void MiniMapView::mouseOver(Action *action, State *state)
 
 		_isMouseScrolled = true;
 
-		// Set the mouse cursor back
-		SDL_EventState(SDL_MOUSEMOTION, SDL_IGNORE);
-		SDL_WarpMouse(_xBeforeMouseScrolling, _yBeforeMouseScrolling);
-		SDL_EventState(SDL_MOUSEMOTION, SDL_ENABLE);
+		if (Options::touchEnabled == false)
+		{
+			// Set the mouse cursor back
+			SDL_EventState(SDL_MOUSEMOTION, SDL_IGNORE);
+			SDL_WarpMouse(_xBeforeMouseScrolling, _yBeforeMouseScrolling);
+			SDL_EventState(SDL_MOUSEMOTION, SDL_ENABLE);
+		}
 
 		// Check the threshold
 		_totalMouseMoveX += action->getDetails()->motion.xrel;
@@ -341,23 +344,26 @@ void MiniMapView::mouseOver(Action *action, State *state)
 		_camera->centerOnPosition(Position(newX,newY,_camera->getViewLevel()));
 		_redraw = true;
 
-		// We don't want to look the mouse-cursor jumping :)
-		if (Options::battleDragScrollInvert)
+		if (Options::touchEnabled == false)
 		{
-			action->getDetails()->motion.x = _xBeforeMouseScrolling;
-			action->getDetails()->motion.y = _yBeforeMouseScrolling;
-		}
-		else
-		{
-			Position delta(-scrollX, -scrollY, 0);
-			int barWidth = _game->getScreen()->getCursorLeftBlackBand();
-			int barHeight = _game->getScreen()->getCursorTopBlackBand();
-			int cursorX = _cursorPosition.x + delta.x;
-			int cursorY =_cursorPosition.y + delta.y;
-			_cursorPosition.x = std::min((int)Round((getX() + getWidth()) * action->getXScale()) + barWidth, std::max((int)Round(getX() * action->getXScale()) + barWidth, cursorX));
-			_cursorPosition.y = std::min((int)Round((getY() + getHeight()) * action->getYScale()) + barHeight, std::max((int)Round(getY() * action->getYScale()) + barHeight, cursorY));
-			action->getDetails()->motion.x = _cursorPosition.x;
-			action->getDetails()->motion.y = _cursorPosition.y;
+			// We don't want to see the mouse-cursor jumping :)
+			if (Options::battleDragScrollInvert)
+			{
+				action->getDetails()->motion.x = _xBeforeMouseScrolling;
+				action->getDetails()->motion.y = _yBeforeMouseScrolling;
+			}
+			else
+			{
+				Position delta(-scrollX, -scrollY, 0);
+				int barWidth = _game->getScreen()->getCursorLeftBlackBand();
+				int barHeight = _game->getScreen()->getCursorTopBlackBand();
+				int cursorX = _cursorPosition.x + delta.x;
+				int cursorY =_cursorPosition.y + delta.y;
+				_cursorPosition.x = std::min((int)Round((getX() + getWidth()) * action->getXScale()) + barWidth, std::max((int)Round(getX() * action->getXScale()) + barWidth, cursorX));
+				_cursorPosition.y = std::min((int)Round((getY() + getHeight()) * action->getYScale()) + barHeight, std::max((int)Round(getY() * action->getYScale()) + barHeight, cursorY));
+				action->getDetails()->motion.x = _cursorPosition.x;
+				action->getDetails()->motion.y = _cursorPosition.y;
+			}
 		}
 		_game->getCursor()->handle(action);
 	}
@@ -400,4 +406,5 @@ void MiniMapView::stopScrolling(Action *action)
 	// reset our "mouse position stored" flag
 	_cursorPosition.z = 0;
 }
+
 }

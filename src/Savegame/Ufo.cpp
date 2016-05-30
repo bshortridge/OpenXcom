@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2015 OpenXcom Developers.
+ * Copyright 2010-2016 OpenXcom Developers.
  *
  * This file is part of OpenXcom.
  *
@@ -18,15 +18,13 @@
  */
 #include "Ufo.h"
 #include <assert.h>
-#define _USE_MATH_DEFINES
-#include <math.h>
 #include <algorithm>
 #include "../fmath.h"
 #include "Craft.h"
 #include "AlienMission.h"
 #include "../Engine/Exception.h"
 #include "../Engine/Language.h"
-#include "../Mod/Ruleset.h"
+#include "../Mod/Mod.h"
 #include "../Mod/RuleUfo.h"
 #include "../Mod/UfoTrajectory.h"
 #include "../Mod/RuleAlienMission.h"
@@ -100,10 +98,10 @@ private:
 /**
  * Loads the UFO from a YAML file.
  * @param node YAML node.
- * @param ruleset The game rules. Use to access the trajectory rules.
+ * @param mod The game mod. Use to access the trajectory rules.
  * @param game The game data. Used to find the UFO's mission.
  */
-void Ufo::load(const YAML::Node &node, const Ruleset &ruleset, SavedGame &game)
+void Ufo::load(const YAML::Node &node, const Mod &mod, SavedGame &game)
 {
 	MovingTarget::load(node);
 	_id = node["id"].as<int>(_id);
@@ -161,7 +159,7 @@ void Ufo::load(const YAML::Node &node, const Ruleset &ruleset, SavedGame &game)
 		_mission = *found;
 
 		std::string tid = node["trajectory"].as<std::string>();
-		_trajectory = ruleset.getUfoTrajectory(tid);
+		_trajectory = mod.getUfoTrajectory(tid);
 		_trajectoryPoint = node["trajectoryPoint"].as<size_t>(_trajectoryPoint);
 	}
 	_fireCountdown = node["fireCountdown"].as<int>(_fireCountdown);
@@ -262,11 +260,11 @@ void Ufo::setId(int id)
 }
 
 /**
- * Returns the UFO's unique identifying name.
+ * Returns the UFO's unique default name.
  * @param lang Language to get strings from.
  * @return Full name.
  */
-std::wstring Ufo::getName(Language *lang) const
+std::wstring Ufo::getDefaultName(Language *lang) const
 {
 	switch (_status)
 	{
@@ -739,8 +737,7 @@ void Ufo::setHitFrame(int frame)
  * Gets the UFO's hit frame.
  * @return the hit frame.
  */
-///
-int Ufo::getHitFrame()
+int Ufo::getHitFrame() const
 {
 	return _hitFrame;
 }
@@ -758,7 +755,7 @@ void Ufo::setEscapeCountdown(int time)
  * Gets the escape timer for dogfights.
  * @return how many ticks until the ship tries to leave.
  */
-int Ufo::getEscapeCountdown()
+int Ufo::getEscapeCountdown() const
 {
 	return _escapeCountdown;
 }
@@ -776,7 +773,7 @@ void Ufo::setFireCountdown(int time)
  * Gets the number of ticks until the ufo is ready to fire.
  * @return ticks until weapon is ready.
  */
-int Ufo::getFireCountdown()
+int Ufo::getFireCountdown() const
 {
 	return _fireCountdown;
 }
@@ -796,8 +793,9 @@ void Ufo::setInterceptionProcessed(bool processed)
  * Gets if the ufo has had its timers decremented on this cycle of interception updates.
  * @return if this ufo has already been processed.
  */
-bool Ufo::getInterceptionProcessed()
+bool Ufo::getInterceptionProcessed() const
 {
 	return _processedIntercept;
 }
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2015 OpenXcom Developers.
+ * Copyright 2010-2016 OpenXcom Developers.
  *
  * This file is part of OpenXcom.
  *
@@ -19,7 +19,7 @@
 #include "ResearchInfoState.h"
 #include "../Engine/Action.h"
 #include "../Engine/Game.h"
-#include "../Mod/ResourcePack.h"
+#include "../Mod/Mod.h"
 #include "../Engine/LocalizedText.h"
 #include "../Engine/Options.h"
 #include "../Interface/TextButton.h"
@@ -32,8 +32,7 @@
 #include "../Interface/ArrowButton.h"
 #include "../Engine/Timer.h"
 #include "../Engine/RNG.h"
-#include "../Mod/Ruleset.h"
-#include <limits>
+#include <climits>
 
 namespace OpenXcom
 {
@@ -44,7 +43,7 @@ namespace OpenXcom
  * @param base Pointer to the base to get info from.
  * @param rule A RuleResearch which will be used to create a new ResearchProject
  */
-ResearchInfoState::ResearchInfoState(Base *base, RuleResearch * rule) : _base(base), _project(new ResearchProject(rule, int(rule->getCost() * OpenXcom::RNG::generate(50, 150)/100))), _rule(rule)
+ResearchInfoState::ResearchInfoState(Base *base, RuleResearch *rule) : _base(base), _project(new ResearchProject(rule, int(rule->getCost() * OpenXcom::RNG::generate(50, 150)/100))), _rule(rule)
 {
 	buildUi();
 }
@@ -55,7 +54,7 @@ ResearchInfoState::ResearchInfoState(Base *base, RuleResearch * rule) : _base(ba
  * @param base Pointer to the base to get info from.
  * @param project A ResearchProject to modify
  */
-ResearchInfoState::ResearchInfoState(Base *base, ResearchProject * project) : _base(base), _project(project), _rule(0)
+ResearchInfoState::ResearchInfoState(Base *base, ResearchProject *project) : _base(base), _project(project), _rule(0)
 {
 	buildUi();
 }
@@ -103,7 +102,7 @@ void ResearchInfoState::buildUi()
 	centerAllSurfaces();
 
 	// Set up objects
-	_window->setBackground(_game->getResourcePack()->getSurface("BACK05.SCR"));
+	_window->setBackground(_game->getMod()->getSurface("BACK05.SCR"));
 
 	_txtTitle->setBig();
 
@@ -120,11 +119,9 @@ void ResearchInfoState::buildUi()
 	if (_rule)
 	{
 		_base->addResearch(_project);
-		if (_rule->needItem() &&
-				(_game->getRuleset()->getUnit(_rule->getName()) ||
-				 Options::spendResearchedItems))
+		if (_rule->needItem() && _rule->destroyItem())
 		{
-			_base->getItems()->removeItem(_rule->getName(), 1);
+			_base->getStorageItems()->removeItem(_rule->getName(), 1);
 		}
 	}
 	setAssignedScientist();
@@ -158,8 +155,8 @@ void ResearchInfoState::buildUi()
 }
 
 /**
-* Frees up memory that's not automatically cleaned on exit
-*/
+ * Frees up memory that's not automatically cleaned on exit
+ */
 ResearchInfoState::~ResearchInfoState()
 {
 	delete _timerLess;
@@ -183,11 +180,9 @@ void ResearchInfoState::btnOkClick(Action *)
 void ResearchInfoState::btnCancelClick(Action *)
 {
 	const RuleResearch *ruleResearch = _rule ? _rule : _project->getRules();
-	if (ruleResearch->needItem() &&
-			(_game->getRuleset()->getUnit(ruleResearch->getName()) ||
-			 Options::spendResearchedItems))
+	if (ruleResearch->needItem() && _rule->destroyItem())
 	{
-		_base->getItems()->addItem(ruleResearch->getName(), 1);
+		_base->getStorageItems()->addItem(ruleResearch->getName(), 1);
 	}
 	_base->removeResearch(_project);
 	_game->popState();
@@ -243,7 +238,7 @@ void ResearchInfoState::moreRelease(Action *action)
 void ResearchInfoState::moreClick(Action *action)
 {
 	if (action->getDetails()->button.button == SDL_BUTTON_RIGHT)
-		moreByValue(std::numeric_limits<int>::max());
+		moreByValue(INT_MAX);
 	if (action->getDetails()->button.button == SDL_BUTTON_LEFT)
 		moreByValue(1);
 }
@@ -278,7 +273,7 @@ void ResearchInfoState::lessRelease(Action *action)
 void ResearchInfoState::lessClick(Action *action)
 {
 	if (action->getDetails()->button.button == SDL_BUTTON_RIGHT)
-		lessByValue(std::numeric_limits<int>::max());
+		lessByValue(INT_MAX);
 	if (action->getDetails()->button.button == SDL_BUTTON_LEFT)
 		lessByValue(1);
 }
@@ -346,4 +341,5 @@ void ResearchInfoState::think()
 	_timerLess->think (this, 0);
 	_timerMore->think (this, 0);
 }
+
 }

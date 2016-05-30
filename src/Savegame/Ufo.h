@@ -1,5 +1,6 @@
+#pragma once
 /*
- * Copyright 2010-2015 OpenXcom Developers.
+ * Copyright 2010-2016 OpenXcom Developers.
  *
  * This file is part of OpenXcom.
  *
@@ -16,13 +17,10 @@
  * You should have received a copy of the GNU General Public License
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef OPENXCOM_UFO_H
-#define OPENXCOM_UFO_H
-
 #include "MovingTarget.h"
 #include <string>
 #include <yaml-cpp/yaml.h>
-#include "CraftId.h"
+#include "Craft.h"
 
 namespace OpenXcom
 {
@@ -31,7 +29,7 @@ class RuleUfo;
 class AlienMission;
 class UfoTrajectory;
 class SavedGame;
-class Ruleset;
+class Mod;
 
 /**
  * Represents an alien UFO on the map.
@@ -64,7 +62,7 @@ public:
 	/// Cleans up the UFO.
 	~Ufo();
 	/// Loads the UFO from YAML.
-	void load(const YAML::Node& node, const Ruleset &ruleset, SavedGame &game);
+	void load(const YAML::Node& node, const Mod &ruleset, SavedGame &game);
 	/// Saves the UFO to YAML.
 	YAML::Node save(bool newBattle) const;
 	/// Saves the UFO's ID to YAML.
@@ -77,8 +75,8 @@ public:
 	int getId() const;
 	/// Sets the UFO's ID.
 	void setId(int id);
-	/// Gets the UFO's name.
-	std::wstring getName(Language *lang) const;
+	/// Gets the UFO's default name.
+	std::wstring getDefaultName(Language *lang) const;
 	/// Gets the UFO's marker.
 	int getMarker() const;
 	/// Gets the UFO's amount of damage.
@@ -154,16 +152,14 @@ public:
 	/// Sets the UFO's hit frame.
 	void setHitFrame(int frame);
 	/// Gets the UFO's hit frame.
-	int getHitFrame();
+	int getHitFrame() const;
 	void setFireCountdown(int time);
-	int getFireCountdown();
+	int getFireCountdown() const;
 	void setEscapeCountdown(int time);
-	int getEscapeCountdown();
+	int getEscapeCountdown() const;
 	void setInterceptionProcessed(bool processed);
-	bool getInterceptionProcessed();
+	bool getInterceptionProcessed() const;
 
 };
 
 }
-
-#endif

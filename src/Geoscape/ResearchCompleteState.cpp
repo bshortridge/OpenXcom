@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2015 OpenXcom Developers.
+ * Copyright 2010-2016 OpenXcom Developers.
  *
  * This file is part of OpenXcom.
  *
@@ -19,7 +19,7 @@
 #include "ResearchCompleteState.h"
 #include "../Engine/Game.h"
 #include "../Engine/LocalizedText.h"
-#include "../Mod/ResourcePack.h"
+#include "../Mod/Mod.h"
 #include "../Interface/TextButton.h"
 #include "../Interface/Window.h"
 #include "../Interface/Text.h"
@@ -32,10 +32,11 @@ namespace OpenXcom
 /**
  * Initializes all the elements in the EndResearch screen.
  * @param game Pointer to the core game.
- * @param research Pointer to the completed research.
+ * @param newResearch Pointer to the completed research (or 0, if the ufopedia article shouldn't popup again).
  * @param bonus Pointer to bonus unlocked research.
+ * @param research Pointer to the research project.
  */
-ResearchCompleteState::ResearchCompleteState(const RuleResearch * research, const RuleResearch * bonus): _research(research), _bonus(bonus)
+ResearchCompleteState::ResearchCompleteState(const RuleResearch *newResearch, const RuleResearch *bonus, const RuleResearch *research) : _research(newResearch), _bonus(bonus)
 {
 	_screen = false;
 
@@ -58,7 +59,7 @@ ResearchCompleteState::ResearchCompleteState(const RuleResearch * research, cons
 	centerAllSurfaces();
 
 	// Set up objects
-	_window->setBackground(_game->getResourcePack()->getSurface("BACK05.SCR"));
+	_window->setBackground(_game->getMod()->getSurface("BACK05.SCR"));
 
 	_btnOk->setText(tr("STR_OK"));
 	_btnOk->onMouseClick((ActionHandler)&ResearchCompleteState::btnOkClick);

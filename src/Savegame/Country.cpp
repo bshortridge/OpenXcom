@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2015 OpenXcom Developers.
+ * Copyright 2010-2016 OpenXcom Developers.
  *
  * This file is part of OpenXcom.
  *
@@ -111,7 +111,7 @@ void Country::setFunding(int funding)
  * Keith Richards would be so proud
  * @return satisfaction level, 0 = alien pact, 1 = unhappy, 2 = satisfied, 3 = happy.
  */
-int Country::getSatisfaction()
+int Country::getSatisfaction() const
 {
 	if (_pact)
 		return 0;
